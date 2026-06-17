@@ -1,2 +1,2 @@
 fileManager = "nemo"
-codeEditor = "zed"
+codeEditor = "zeditor"

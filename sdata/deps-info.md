@@ -117,8 +117,16 @@ Tips:
   - Basic component.
 - `nemo`
   - Used as the preferred file manager.
+- `nordvpn-bin`
+  - Provides NordVPN daemon and CLI.
 - `onlyoffice-bin`
   - Used as the preferred office suite.
+- `openai-codex`
+  - Provides the Codex CLI coding agent.
+- `openai-codex-desktop`
+  - Provides the Codex desktop app.
+- `opencode`
+  - Provides the opencode CLI coding agent.
 - `visual-studio-code-bin`
   - Used as a code editor.
 - `zed`

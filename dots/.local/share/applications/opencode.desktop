@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=OpenCode
+Comment=OpenCode coding agent
+TryExec=opencode
+Exec=kitty -1 opencode
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;
