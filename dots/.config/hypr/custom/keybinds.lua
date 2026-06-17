@@ -9,3 +9,16 @@ for i = 1, 10 do
         hl.dispatch(hl.dsp.window.move({ workspace = workspace_in_group(i), follow = false }))
     end, { description = "Window: Send to workspace " .. i })
 end
+
+-- Browser: Super+B
+hl.unbind("SUPER + B")
+hl.bind("SUPER + B", hl.dsp.exec_cmd("~/.config/hypr/hyprland/scripts/launch_first_available.sh 'zen-browser'"), { description = "Browser: Open" })
+
+-- Sidebar: simplificar
+hl.unbind("SUPER + A")
+hl.unbind("SUPER + O")
+hl.unbind("SUPER + N")
+hl.bind("SUPER + N", hl.dsp.global("quickshell:sidebarLeftToggle"), { description = "Shell: Left sidebar" })
+hl.bind("SUPER + H", hl.dsp.global("quickshell:sidebarRightToggle"), { description = "Shell: Right sidebar" })
+
+
