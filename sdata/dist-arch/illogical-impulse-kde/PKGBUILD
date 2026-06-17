@@ -1,7 +1,7 @@
 groups=(illogical-impulse)
 pkgname=illogical-impulse-kde
 pkgver=1.0
-pkgrel=3
+pkgrel=5
 pkgdesc='Illogical Impulse KDE Dependencies'
 arch=(any)
 license=(None)
@@ -9,8 +9,12 @@ depends=(
   bluedevil
   gnome-keyring
   networkmanager
+  nemo
+  onlyoffice-bin
   plasma-nm
   polkit-kde-agent
-  dolphin
+  visual-studio-code-bin
+  zed
+  zen-browser-bin
   systemsettings
 )

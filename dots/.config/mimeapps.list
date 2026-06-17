@@ -1,0 +1,19 @@
+[Default Applications]
+inode/directory=nemo.desktop
+text/plain=dev.zed.Zed.desktop;zed.desktop
+text/markdown=dev.zed.Zed.desktop;zed.desktop
+text/x-python=dev.zed.Zed.desktop;zed.desktop
+text/x-shellscript=dev.zed.Zed.desktop;zed.desktop
+application/json=dev.zed.Zed.desktop;zed.desktop
+application/x-yaml=dev.zed.Zed.desktop;zed.desktop
+application/xml=dev.zed.Zed.desktop;zed.desktop
+
+[Added Associations]
+inode/directory=nemo.desktop;
+text/plain=dev.zed.Zed.desktop;zed.desktop;
+text/markdown=dev.zed.Zed.desktop;zed.desktop;
+text/x-python=dev.zed.Zed.desktop;zed.desktop;
+text/x-shellscript=dev.zed.Zed.desktop;zed.desktop;
+application/json=dev.zed.Zed.desktop;zed.desktop;
+application/x-yaml=dev.zed.Zed.desktop;zed.desktop;
+application/xml=dev.zed.Zed.desktop;zed.desktop;

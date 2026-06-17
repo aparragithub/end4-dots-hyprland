@@ -115,8 +115,16 @@ Tips:
   - Provide command `kcmshell6 kcm_networkmanagement` used by Quickshell network functionality.
 - `polkit-kde-agent`
   - Basic component.
-- `dolphin`
-  - Used in Hyprland and Quickshell config.
+- `nemo`
+  - Used as the preferred file manager.
+- `onlyoffice-bin`
+  - Used as the preferred office suite.
+- `visual-studio-code-bin`
+  - Used as a code editor.
+- `zed`
+  - Used as a code editor.
+- `zen-browser-bin`
+  - Used as a browser.
 - `systemsettings`
   - Used in Hyprland `keybinds.conf`.
 

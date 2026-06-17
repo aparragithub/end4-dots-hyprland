@@ -173,6 +173,10 @@ Singleton {
         id: updateConnectionType
         property string buffer
         command: ["sh", "-c", "nmcli -t -f TYPE,STATE d status && nmcli -t -f CONNECTIVITY g"]
+        environment: ({
+            LANG: "C",
+            LC_ALL: "C"
+        })
         running: true
         function startCheck() {
             buffer = "";
