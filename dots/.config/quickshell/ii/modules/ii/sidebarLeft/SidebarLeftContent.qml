@@ -19,7 +19,8 @@ Item {
     property var tabButtonList: [
         ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
         ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),
-        ...((root.animeEnabled && !root.animeCloset) ? [{"icon": "bookmark_heart", "name": Translation.tr("Anime")}] : [])
+        ...((root.animeEnabled && !root.animeCloset) ? [{"icon": "bookmark_heart", "name": Translation.tr("Anime")}] : []),
+        {"icon": "edit_note", "name": Translation.tr("Notes")}
     ]
     property int tabCount: swipeView.count
 
@@ -86,8 +87,8 @@ Item {
                 contentChildren: [
                     ...(root.aiChatEnabled ? [aiChat.createObject()] : []),
                     ...(root.translatorEnabled ? [translator.createObject()] : []),
-                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),
                     ...(root.animeEnabled ? [anime.createObject()] : []),
+                    scratchpad.createObject(),
                 ]
             }
         }
@@ -105,14 +106,8 @@ Item {
             Anime {}
         }
         Component {
-            id: placeholder
-            Item {
-                StyledText {
-                    anchors.centerIn: parent
-                    text: root.animeCloset ? Translation.tr("Nothing") : Translation.tr("Enjoy your empty sidebar...")
-                    color: Appearance.colors.colSubtext
-                }
-            }
+            id: scratchpad
+            Scratchpad {}
         }
     }
 }
