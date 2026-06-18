@@ -1,11 +1,12 @@
 groups=(illogical-impulse)
 pkgname=illogical-impulse-kde
 pkgver=1.0
-pkgrel=6
+pkgrel=8
 pkgdesc='Illogical Impulse KDE Dependencies'
 arch=(any)
 license=(None)
 depends=(
+  bitwarden
   bluedevil
   gnome-keyring
   networkmanager
@@ -17,6 +18,8 @@ depends=(
   opencode
   plasma-nm
   polkit-kde-agent
+  sddm
+  sddm-theme-sugar-candy-git
   visual-studio-code-bin
   zed
   zen-browser-bin

@@ -105,6 +105,8 @@ Tips:
   - Surely needed.
 
 ## illogical-impulse-kde
+- `bitwarden`
+  - Used as the preferred password manager.
 - `bluedevil`
   - Provide command `kcmshell6 kcm_bluetooth` used by Quickshell bluetooth functionality.
 - `gnome-keyring`
@@ -115,6 +117,10 @@ Tips:
   - Provide command `kcmshell6 kcm_networkmanagement` used by Quickshell network functionality.
 - `polkit-kde-agent`
   - Basic component.
+- `sddm`
+  - Display manager option.
+- `sddm-theme-sugar-candy-git`
+  - Sugar Candy theme for SDDM.
 - `nemo`
   - Used as the preferred file manager.
 - `nordvpn-bin`
