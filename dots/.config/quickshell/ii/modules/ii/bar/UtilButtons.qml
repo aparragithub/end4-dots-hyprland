@@ -1,4 +1,5 @@
 import qs
+import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import QtQuick
@@ -13,6 +14,20 @@ Item {
     property bool borderless: Config.options.bar.borderless
     implicitWidth: rowLayout.implicitWidth + rowLayout.spacing * 2
     implicitHeight: rowLayout.implicitHeight
+
+    Timer {
+        id: postUpdateRefreshTimer
+        interval: 30000
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            if (Updates.count === 0) {
+                postUpdateRefreshTimer.stop()
+            } else {
+                Updates.refresh()
+            }
+        }
+    }
 
     RowLayout {
         id: rowLayout
@@ -151,6 +166,51 @@ Item {
                     }
                     iconSize: Appearance.font.pixelSize.large
                     color: Appearance.colors.colOnLayer2
+                }
+            }
+        }
+
+        Loader {
+            active: Updates.updateAdvised || Updates.updateStronglyAdvised
+            visible: Updates.updateAdvised || Updates.updateStronglyAdvised
+            sourceComponent: RippleButton {
+                Layout.alignment: Qt.AlignVCenter
+                implicitHeight: Math.max(updateIndicatorRow.implicitHeight, 26)
+                implicitWidth: updateIndicatorRow.implicitWidth + 12
+                buttonRadius: Appearance.rounding.full
+                colBackground: Appearance.colors.colLayer1Hover
+                colBackgroundHover: Appearance.colors.colLayer1Hover
+                onClicked: {
+                    Quickshell.execDetached(["bash", "-c", Config.options.apps.update])
+                    postUpdateRefreshTimer.start()
+                }
+
+                RowLayout {
+                    id: updateIndicatorRow
+                    anchors.centerIn: parent
+                    spacing: 4
+
+                    MaterialSymbol {
+                        horizontalAlignment: Qt.AlignVCenter
+                        fill: 0
+                        text: "sync"
+                        iconSize: Appearance.font.pixelSize.large
+                        color: Updates.updateStronglyAdvised ? Appearance.colors.colError : Appearance.colors.colOnLayer2
+                    }
+
+                    Item {
+                        Layout.alignment: Qt.AlignVCenter
+                        implicitWidth: updateCountText.implicitWidth
+                        implicitHeight: updateCountText.implicitHeight
+
+                        StyledText {
+                            id: updateCountText
+                            anchors.centerIn: parent
+                            text: Updates.count.toString()
+                            font.pixelSize: Appearance.font.pixelSize.small
+                            color: Updates.updateStronglyAdvised ? Appearance.colors.colError : Appearance.colors.colOnLayer2
+                        }
+                    }
                 }
             }
         }
