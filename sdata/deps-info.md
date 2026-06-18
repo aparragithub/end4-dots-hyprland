@@ -76,11 +76,23 @@ Tips:
   - Used in fuzzel, Hyprland, kdeglobals and Quickshell config; kitty config is also included as dots.
 - `matugen-bin`
   - Used in Quickshell.
+- `mkos-big-sur-icon-theme`
+  - [source](https://github.com/zayronxio/Mkos-Big-Sur)
+  - Icon theme option.
+- `numix-circle-icon-theme-git`
+  - [source](https://github.com/numixproject/numix-icon-theme-circle)
+  - Icon theme option.
 - `otf-space-grotesk`
   - [source](https://events.ccc.de/congress/2024/infos/styleguide.html)
   - Used in Quickshell and matugen config.
+- `papirus-icon-theme`
+  - [source](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme)
+  - Icon theme option.
 - `starship`
   - Used in Fish config.
+- `tela-icon-theme`
+  - [source](https://github.com/vinceliuice/Tela-icon-theme)
+  - Icon theme option.
 - `ttf-jetbrains-mono-nerd`
   - Font name: `JetBrains Mono NF`, `JetBrainsMono Nerd Font`.
   - Used in foot, kdeglobals, kitty, qt5ct, qt6ct and Quickshell config.

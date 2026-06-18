@@ -1,0 +1,20 @@
+pkgname=mkos-big-sur-icon-theme
+pkgver=r201.29772d1
+pkgrel=1
+pkgdesc='Mkos Big Sur icon theme'
+arch=(any)
+url='https://github.com/zayronxio/Mkos-Big-Sur'
+license=(custom)
+source=('git+https://github.com/zayronxio/Mkos-Big-Sur.git')
+sha256sums=('SKIP')
+
+pkgver() {
+  cd Mkos-Big-Sur
+  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+package() {
+  install -d "$pkgdir/usr/share/icons/Mkos-Big-Sur"
+  cp -a Mkos-Big-Sur/. "$pkgdir/usr/share/icons/Mkos-Big-Sur/"
+  rm -rf "$pkgdir/usr/share/icons/Mkos-Big-Sur/.git"
+}

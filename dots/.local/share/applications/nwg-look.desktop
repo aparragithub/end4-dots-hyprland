@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=GTK Theme Settings
+Comment=Customize GTK themes, icons, cursors, and fonts
+TryExec=nwg-look
+Exec=env -u GTK_THEME nwg-look
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=Settings;DesktopSettings;

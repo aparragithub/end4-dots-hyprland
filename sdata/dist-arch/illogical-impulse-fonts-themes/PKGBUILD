@@ -1,7 +1,7 @@
 groups=(illogical-impulse)
 pkgname=illogical-impulse-fonts-themes
 pkgver=1.0
-pkgrel=6
+pkgrel=7
 pkgdesc='Illogical Impulse Fonts and Theming Dependencies'
 arch=(any)
 license=(None)
@@ -15,8 +15,11 @@ depends=(
   fontconfig
   kitty
   matugen
+  numix-circle-icon-theme-git
   otf-space-grotesk
+  papirus-icon-theme
   starship
+  tela-icon-theme
   ttf-jetbrains-mono-nerd
   ttf-material-symbols-variable-git
   ttf-readex-pro

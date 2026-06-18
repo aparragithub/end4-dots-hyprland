@@ -1,3 +1,4 @@
 -- Dark mode for all apps
-hl.env("GTK_THEME", "Adwaita:dark")
+-- Let nwg-look/gsettings control GTK themes.
+-- hl.env("GTK_THEME", "Adwaita:dark")
 hl.env("QT_STYLE_OVERRIDE", "Fusion")
