@@ -21,4 +21,6 @@ hl.unbind("SUPER + N")
 hl.bind("SUPER + N", hl.dsp.global("quickshell:sidebarLeftToggle"), { description = "Shell: Left sidebar" })
 hl.bind("SUPER + H", hl.dsp.global("quickshell:sidebarRightToggle"), { description = "Shell: Right sidebar" })
 
-
+-- Workspace switcher: Alt+Tab
+hl.bind("ALT + Tab", hl.dsp.focus({ workspace = "m+1" }), { description = "Workspace: Focus next occupied" })
+hl.bind("ALT + SHIFT + Tab", hl.dsp.focus({ workspace = "m-1" }), { description = "Workspace: Focus previous occupied" })

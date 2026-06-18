@@ -20,6 +20,19 @@ Singleton {
     property alias directory: folderModel.folder
     readonly property string effectiveDirectory: FileUtils.trimFileProtocol(folderModel.folder.toString())
     property url defaultFolder: Qt.resolvedUrl(`${Directories.pictures}/Wallpapers`)
+
+    Process {
+        id: initDefaultFolderProc
+        running: true
+        command: ["bash", "-c", `[ -d "${FileUtils.trimFileProtocol(Directories.home)}/Wallpapers" ] && echo yes || echo no`]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (text.trim() === "yes") {
+                    root.defaultFolder = Qt.resolvedUrl(`${Directories.home}/Wallpapers`)
+                }
+            }
+        }
+    }
     property alias folderModel: folderModel // Expose for direct binding when needed
     property string searchQuery: ""
     readonly property list<string> extensions: [ // TODO: add videos
