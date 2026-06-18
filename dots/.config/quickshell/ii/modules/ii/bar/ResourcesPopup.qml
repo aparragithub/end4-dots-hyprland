@@ -12,6 +12,10 @@ StyledPopup {
         return (kb / (1024 * 1024)).toFixed(1) + " GB";
     }
 
+    function formatTemperature(temp) {
+        return temp >= 0 ? `${Math.round(temp)}°C` : "--";
+    }
+
     Row {
         anchors.centerIn: parent
         spacing: 12
@@ -87,6 +91,34 @@ StyledPopup {
                     icon: "bolt"
                     label: Translation.tr("Load:")
                     value: `${Math.round(ResourceUsage.cpuUsage * 100)}%`
+                }
+                StyledPopupValueRow {
+                    icon: "device_thermostat"
+                    label: Translation.tr("Temp:")
+                    value: root.formatTemperature(ResourceUsage.cpuTemperature)
+                }
+            }
+        }
+
+        Column {
+            anchors.top: parent.top
+            spacing: 8
+
+            StyledPopupHeaderRow {
+                icon: "developer_board"
+                label: "GPU"
+            }
+            Column {
+                spacing: 4
+                StyledPopupValueRow {
+                    icon: "bolt"
+                    label: Translation.tr("Load:")
+                    value: ResourceUsage.gpuAvailable ? `${Math.round(ResourceUsage.gpuUsage * 100)}%` : "--"
+                }
+                StyledPopupValueRow {
+                    icon: "device_thermostat"
+                    label: Translation.tr("Temp:")
+                    value: root.formatTemperature(ResourceUsage.gpuTemperature)
                 }
             }
         }

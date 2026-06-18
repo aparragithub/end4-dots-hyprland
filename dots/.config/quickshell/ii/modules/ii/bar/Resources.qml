@@ -45,6 +45,16 @@ MouseArea {
             warningThreshold: Config.options.bar.resources.cpuWarningThreshold
         }
 
+        Resource {
+            iconName: "developer_board"
+            percentage: ResourceUsage.gpuUsage
+            shown: ResourceUsage.gpuAvailable && (Config.options.bar.resources.alwaysShowCpu ||
+                !(MprisController.activePlayer?.trackTitle?.length > 0) ||
+                root.alwaysShowAllResources)
+            Layout.leftMargin: shown ? 6 : 0
+            warningThreshold: Config.options.bar.resources.cpuWarningThreshold
+        }
+
     }
 
     ResourcesPopup {

@@ -2,6 +2,7 @@ pragma Singleton
 import Quickshell
 import qs.services
 import qs.modules.common
+import qs.modules.common.functions
 
 Singleton {
     id: root
@@ -30,7 +31,12 @@ Singleton {
     }
 
     function launchTaskManager() {
-        Quickshell.execDetached(["bash", "-c", `${Config.options.apps.taskManager}`]);
+        Quickshell.execDetached([
+            `${FileUtils.trimFileProtocol(Directories.config)}/hypr/hyprland/scripts/launch_first_available.sh`,
+            "gnome-system-monitor",
+            "plasma-systemmonitor --page-name Processes",
+            "command -v btop && kitty -1 fish -c btop"
+        ]);
     }
 
     function hibernate() {

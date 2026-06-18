@@ -1,13 +1,14 @@
 groups=(illogical-impulse)
 pkgname=illogical-impulse-kde
 pkgver=1.0
-pkgrel=8
+pkgrel=9
 pkgdesc='Illogical Impulse KDE Dependencies'
 arch=(any)
 license=(None)
 depends=(
   bitwarden
   bluedevil
+  gnome-system-monitor
   gnome-keyring
   networkmanager
   nemo
