@@ -500,6 +500,15 @@ Singleton {
 
             property JsonObject sidebar: JsonObject {
                 property bool keepRightSidebarLoaded: true
+                property JsonObject aiUsage: JsonObject {
+                    property int fetchInterval: 5          // minutes between automatic refreshes
+                    property int warningThreshold: 90      // gauge turns red at/above this utilization (%)
+                    property JsonObject providers: JsonObject {
+                        property JsonObject claude: JsonObject {
+                            property bool enable: false
+                        }
+                    }
+                }
                 property JsonObject translator: JsonObject {
                     property bool enable: false
                     property int delay: 300 // Delay before sending request. Reduces (potential) rate limits and lag.
