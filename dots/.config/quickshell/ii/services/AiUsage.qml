@@ -53,8 +53,11 @@ Singleton {
     property int  spentTodayTokens: 0
 
     // ── Loading flags ────────────────────────────────────────────────────────
-    property bool quotaLoading: false
-    property bool spentLoading: false
+    // Start true while the provider is enabled so the UI shows "Loading…" until
+    // the first fetch resolves, instead of flashing the "unavailable" notice for
+    // one frame before any fetch has run.
+    property bool quotaLoading: Config.options.sidebar.aiUsage.providers.claude.enable
+    property bool spentLoading: Config.options.sidebar.aiUsage.providers.claude.enable
 
     // ── Internal helpers ─────────────────────────────────────────────────────
     function _parseIso(s) {
@@ -92,8 +95,10 @@ Singleton {
 
     function _refineQuota(data) {
         root.subscriptionType   = data.subscriptionType ?? "";
-        root.fiveHour           = data.five_hour?.utilization ?? 0;
-        root.sevenDay           = data.seven_day?.utilization ?? 0;
+        // Missing utilization → -1 ("not reported"), so the widget can hide the
+        // gauge instead of drawing a misleading 0%.
+        root.fiveHour           = data.five_hour?.utilization ?? -1;
+        root.sevenDay           = data.seven_day?.utilization ?? -1;
         root.fiveHourReset      = root._parseIso(data.five_hour?.resets_at);
         root.sevenDayReset      = root._parseIso(data.seven_day?.resets_at);
         root.claudeAvailable    = true;
@@ -161,15 +166,20 @@ Singleton {
         // Alternatively, ccusage may return a flat array with a "period" field.
         // We handle both shapes defensively.
         let todayCost = 0, weekCost = 0, monthCost = 0, todayTokens = 0;
+        // Track whether any recognized, non-empty spend field actually matched,
+        // so valid JSON in an unexpected shape (all-zero result) is reported as
+        // an unrecognized shape rather than masquerading as real spend data.
+        let matched = false;
 
         function sumPeriod(rows) {
             let cost = 0, tokens = 0;
-            if (!Array.isArray(rows)) return { cost, tokens };
+            if (!Array.isArray(rows) || rows.length === 0) return { cost, tokens, seen: false };
+            matched = true;
             for (const row of rows) {
                 cost   += (row.totalCost   ?? row.cost   ?? 0);
                 tokens += (row.totalTokens ?? row.tokens ?? 0);
             }
-            return { cost, tokens };
+            return { cost, tokens, seen: true };
         }
 
         if (Array.isArray(data)) {
@@ -192,6 +202,15 @@ Singleton {
             todayTokens = d.tokens;
         }
 
+        if (!matched) {
+            // Valid JSON, but none of the recognized period arrays were present
+            // or non-empty — treat as an unrecognized shape instead of $0.
+            root.spentAvailable = false;
+            root.spentError     = "unrecognized ccusage JSON shape";
+            root.spentLoading   = false;
+            return;
+        }
+
         root.spentTodayCost   = todayCost;
         root.spentWeekCost    = weekCost;
         root.spentMonthCost   = monthCost;
@@ -207,7 +226,10 @@ Singleton {
         // the PKGBUILD depends (declared in illogical-impulse-basic). If the AUR
         // ccusage package is installed, the `ccusage` binary is available directly;
         // npx falls back gracefully when it is.
-        command: ["bash", "-c", "npx ccusage@latest --json 2>/dev/null || exit 1"]
+        // `timeout 60` guards against a hung npx (e.g. network stall on first
+        // download) leaving spentLoading stuck forever. timeout exits 124 on
+        // expiry, which the onExited non-zero path handles.
+        command: ["bash", "-c", "timeout 60 npx ccusage@latest --json 2>/dev/null || exit 1"]
         stdout: StdioCollector {
             onStreamFinished: {
                 root.spentLoading = false;

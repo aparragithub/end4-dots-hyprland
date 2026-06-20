@@ -166,6 +166,9 @@ Item {
 
                             // ── 5-hour gauge ─────────────────────────────────
                             ColumnLayout {
+                                // -1 means "not reported by the API" → hide the
+                                // gauge rather than drawing a misleading 0%.
+                                visible: AiUsage.fiveHour >= 0
                                 Layout.alignment: Qt.AlignHCenter
                                 spacing: 4
 
@@ -211,6 +214,9 @@ Item {
 
                             // ── 7-day gauge ──────────────────────────────────
                             ColumnLayout {
+                                // -1 means "not reported by the API" → hide the
+                                // gauge rather than drawing a misleading 0%.
+                                visible: AiUsage.sevenDay >= 0
                                 Layout.alignment: Qt.AlignHCenter
                                 spacing: 4
 
@@ -288,7 +294,7 @@ Item {
                             wrapMode: Text.WordWrap
                             color: Appearance.colors.colSubtext
                             font.pixelSize: Appearance.font.pixelSize.small
-                            text: Translation.tr("Spend unavailable. Install ccusage: npm i -g ccusage")
+                            text: Translation.tr("Spend unavailable. Install ccusage: yay -S ccusage (npx fallback used automatically)")
                         }
 
                         // Spend rows
