@@ -30,6 +30,7 @@ jq '
   | .bar.workspaces.monochromeIcons = false                # full-color workspace icons
   | .tray.monochromeIcons = false                          # full-color tray icons
   | .bar.utilButtons.showPerformanceProfileToggle = true   # show power-profile toggle in bar
+  | .apps.update = "kitty -1 --hold=yes fish -i -c '\''sudo pacman -Syu'\''"  # see note below
 ' config.json > config.json.tmp && mv config.json.tmp config.json
 ```
 
@@ -41,7 +42,8 @@ jq '{
   dock_mono: .dock.monochromeIcons,
   ws_mono: .bar.workspaces.monochromeIcons,
   tray_mono: .tray.monochromeIcons,
-  perfToggle: .bar.utilButtons.showPerformanceProfileToggle
+  perfToggle: .bar.utilButtons.showPerformanceProfileToggle,
+  update: .apps.update
 }' config.json
 ```
 
@@ -50,7 +52,40 @@ evaluated at startup. Rollback: `mv config.json.bak config.json`.
 
 ---
 
-## 2. Intel iGPU monitoring (Intel machines only)
+## 2. Known issues & their fixes
+
+### System update button does nothing after the password prompt
+
+The default update command used `pkexec pacman -Syu`. polkit authentication
+hangs/fails in this session context, so after typing the password nothing
+happens. Fix: run the update with `sudo` **inside the terminal** instead of
+`pkexec` — you type the password in the kitty window and pacman runs
+interactively. The repo default in
+`dots/.config/quickshell/ii/modules/common/Config.qml` (`apps.update`) is
+already set to `sudo`; the `jq` snippet above also overrides it in `config.json`
+for existing installs.
+
+### WiFi icon shows "disconnected" while connected (VPN machines)
+
+`Network.qml` treats NetworkManager connectivity `limited` as not-connected and
+shows the "bad" icon. With NordVPN (NordLynx), NM's connectivity probe is routed
+via fwmark and gets dropped by NordVPN's firewall, so NM reports `limited` even
+though the internet works — and the icon looks disconnected.
+
+Fix applied: disable NordVPN's firewall so the probe succeeds and NM reports
+`full`:
+
+```sh
+nordvpn set firewall disabled
+```
+
+> Trade-off: with the firewall off, traffic can leak if the tunnel drops.
+> Acceptable here because the Kill Switch is also disabled. Re-enable with
+> `nordvpn set firewall enabled` if you turn the Kill Switch back on.
+
+---
+
+## 3. Intel iGPU monitoring (Intel machines only)
 
 The GPU widget code (committed in the repo) reads Intel GPU usage via
 `intel_gpu_top`, because Intel i915 does **not** expose `gpu_busy_percent` in
