@@ -1,7 +1,7 @@
 groups=(illogical-impulse)
 pkgname=illogical-impulse-kde
 pkgver=1.0
-pkgrel=11
+pkgrel=12
 pkgdesc='Illogical Impulse KDE Dependencies'
 arch=(any)
 license=(None)
@@ -13,6 +13,9 @@ depends=(
   gnome-keyring
   networkmanager
   nemo
+  nemo-fileroller
+  nemo-terminal
+  cinnamon-translations
   nordvpn-bin
   onlyoffice-bin
   openai-codex

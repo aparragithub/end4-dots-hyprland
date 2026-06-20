@@ -48,6 +48,14 @@ pre_process() {
     if [ ! -d "$CACHE_DIR"/user/generated ]; then
         mkdir -p "$CACHE_DIR"/user/generated
     fi
+
+    # Matugen writes GTK4 output directly. Broken theme symlinks make it abort
+    # after partially generating colors, leaving Quickshell with stale state.
+    for gtk4_path in "$XDG_CONFIG_HOME"/gtk-4.0/gtk.css "$XDG_CONFIG_HOME"/gtk-4.0/gtk-dark.css; do
+        if [ -L "$gtk4_path" ] && [ ! -e "$gtk4_path" ]; then
+            rm -f "$gtk4_path"
+        fi
+    done
 }
 
 post_process() {
