@@ -8,7 +8,7 @@
 case "${SKIP_MISCCONF}" in
   true) true;;
   *)
-    for i in $(find dots/.config/ -mindepth 1 -maxdepth 1 ! -name 'quickshell' ! -name 'fish' ! -name 'hypr' ! -name 'fontconfig' -exec basename {} \;); do
+    for i in $(find dots/.config/ -mindepth 1 -maxdepth 1 ! -name 'quickshell' ! -name 'fish' ! -name 'hypr' ! -name 'fontconfig' ! -name 'gtk-3.0' ! -name 'gtk-4.0' -exec basename {} \;); do
 #      i="dots/.config/$i"
       echo "[$0]: Found target: dots/.config/$i"
       if [ -d "dots/.config/$i" ];then install_dir__sync "dots/.config/$i" "$XDG_CONFIG_HOME/$i"
@@ -16,6 +16,8 @@ case "${SKIP_MISCCONF}" in
       fi
     done
     install_dir "dots/.local/share/konsole" "${XDG_DATA_HOME}"/konsole
+    install_dir__ignore_existing "dots/.config/gtk-3.0" "$XDG_CONFIG_HOME/gtk-3.0"
+    install_dir__ignore_existing "dots/.config/gtk-4.0" "$XDG_CONFIG_HOME/gtk-4.0"
     ;;
 esac
 

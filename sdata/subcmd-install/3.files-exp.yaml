@@ -98,6 +98,12 @@ patterns:
   - from: "dots/.config/xdg-desktop-portal"
     to: "$XDG_CONFIG_HOME/xdg-desktop-portal"
     mode: "sync"
+  - from: "dots/.config/gtk-3.0"
+    to: "$XDG_CONFIG_HOME/gtk-3.0"
+    mode: "skip-if-exists"
+  - from: "dots/.config/gtk-4.0"
+    to: "$XDG_CONFIG_HOME/gtk-4.0"
+    mode: "skip-if-exists"
   # MISC config files (individual files in .config)
   - from: "dots/.config/chrome-flags.conf"
     to: "$XDG_CONFIG_HOME/chrome-flags.conf"

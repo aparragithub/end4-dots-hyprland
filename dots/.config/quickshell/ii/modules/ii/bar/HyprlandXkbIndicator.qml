@@ -7,7 +7,7 @@ Loader {
     id: root
     property bool vertical: false
     property color color: Appearance.colors.colOnSurfaceVariant
-    active: HyprlandXkb.layoutCodes.length > 1
+    active: Config.options.bar.indicators.showKeyboardLayout && HyprlandXkb.layoutCodes.length > 1
     visible: active
 
     function abbreviateLayoutCode(fullCode) {

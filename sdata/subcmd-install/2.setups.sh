@@ -19,6 +19,21 @@ function setup_user_group(){
     x sudo usermod -aG video,i2c,input "$(whoami)"
   fi
 }
+
+function setup_sddm_everforest_theme(){
+  local setup_script="${REPO_ROOT}/sdata/sddm-everforest/setup.sh"
+
+  if [[ ! -f "$setup_script" ]]; then
+    return
+  fi
+
+  if [[ ! -d /usr/share/sddm/themes/Sugar-Candy ]]; then
+    printf "${STY_YELLOW}[$0]: Sugar Candy SDDM theme not found, skipping Everforest SDDM setup.${STY_RST}\n"
+    return
+  fi
+
+  x sudo bash "$setup_script"
+}
 #####################################################################################
 # These python packages are installed using uv into the venv (virtual environment). Once the folder of the venv gets deleted, they are all gone cleanly. So it's considered as setups, not dependencies.
 showfun install-python-packages
@@ -48,6 +63,11 @@ if [[ ! -z $(systemctl --version) ]]; then
     fi
   fi
   v sudo systemctl enable bluetooth --now
+  if systemctl list-unit-files sddm.service >/dev/null 2>&1; then
+    v sudo systemctl enable sddm
+    showfun setup_sddm_everforest_theme
+    v setup_sddm_everforest_theme
+  fi
 elif [[ ! -z $(openrc --version) ]]; then
   v bash -c "echo 'modules=i2c-dev' | sudo tee -a /etc/conf.d/modules"
   v sudo rc-update add modules boot
@@ -69,3 +89,6 @@ fi
 
 v gsettings set org.gnome.desktop.interface font-name 'Google Sans Flex Medium 11 @opsz=11,wght=500'
 v gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+v gsettings set org.gnome.desktop.interface gtk-theme 'Orchis-Green-Dark'
+v gsettings set org.gnome.desktop.interface icon-theme 'Numix-Circle'
+v gsettings set org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Classic'

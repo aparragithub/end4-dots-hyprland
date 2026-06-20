@@ -18,6 +18,14 @@ ContentPage {
                 Config.options.bar.indicators.notifications.showUnreadCount = checked;
             }
         }
+        ConfigSwitch {
+            buttonIcon: "language"
+            text: Translation.tr("Keyboard layout indicator")
+            checked: Config.options.bar.indicators.showKeyboardLayout
+            onCheckedChanged: {
+                Config.options.bar.indicators.showKeyboardLayout = checked;
+            }
+        }
     }
     
     ContentSection {

@@ -244,23 +244,25 @@ Singleton {
                 property JsonObject resources: JsonObject {
                     property bool alwaysShowSwap: true
                     property bool alwaysShowCpu: true
+                    property bool alwaysShowGpu: true
                     property int memoryWarningThreshold: 95
                     property int swapWarningThreshold: 85
                     property int cpuWarningThreshold: 90
+                    property int gpuWarningThreshold: 90
                 }
                 property list<string> screenList: [] // List of names, like "eDP-1", find out with 'hyprctl monitors' command
                 property JsonObject utilButtons: JsonObject {
                     property bool showScreenSnip: true
                     property bool showColorPicker: false
                     property bool showMicToggle: false
-                    property bool showKeyboardToggle: true
-                    property bool showDarkModeToggle: true
-                    property bool showPerformanceProfileToggle: false
+                    property bool showKeyboardToggle: false
+                    property bool showDarkModeToggle: false
+                    property bool showPerformanceProfileToggle: true
                     property bool showScreenRecord: false
                 }
                 property JsonObject workspaces: JsonObject {
                     property bool monochromeIcons: true
-                    property int shown: 10
+                    property int shown: 5
                     property bool showAppIcons: true
                     property bool alwaysShowNumbers: false
                     property int showNumberDelay: 300 // milliseconds
@@ -275,6 +277,7 @@ Singleton {
                     property int fetchInterval: 10 // minutes
                 }
                 property JsonObject indicators: JsonObject {
+                    property bool showKeyboardLayout: false
                     property JsonObject notifications: JsonObject {
                         property bool showUnreadCount: false
                     }
@@ -323,7 +326,7 @@ Singleton {
             }
 
             property JsonObject dock: JsonObject {
-                property bool enable: false
+                property bool enable: true
                 property bool monochromeIcons: true
                 property real height: 60
                 property real hoverRegionHeight: 2

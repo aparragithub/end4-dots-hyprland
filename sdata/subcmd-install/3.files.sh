@@ -191,6 +191,26 @@ function install_google_sans_flex(){
   realpath -se "$target_dir" >> "${INSTALLED_LISTFILE}"
 }
 
+function preload_gtk_colors(){
+  if ! command -v matugen >/dev/null 2>&1; then
+    return
+  fi
+
+  if [[ ! -f "$XDG_CONFIG_HOME/matugen/config.toml" ]]; then
+    printf "${STY_YELLOW}[$0]: Matugen config not found, skipping GTK color preload.${STY_RST}\n"
+    return
+  fi
+
+  if [[ -f "$XDG_CONFIG_HOME/illogical-impulse/config.json" ]] && \
+    [[ "$(jq -r '.appearance.wallpaperTheming.enableAppsAndShell // true' "$XDG_CONFIG_HOME/illogical-impulse/config.json")" == "false" ]]; then
+    printf "${STY_BLUE}[$0]: App and shell theming disabled, keeping existing GTK colors.${STY_RST}\n"
+    return
+  fi
+
+  v mkdir -p "$XDG_CONFIG_HOME/gtk-3.0" "$XDG_CONFIG_HOME/gtk-4.0"
+  v matugen --source-color-index 0 color hex '#bcc8d3' --mode dark --type scheme-tonal-spot
+}
+
 #####################################################################################
 # In case some dirs does not exists
 for i in "$XDG_BIN_HOME" "$XDG_CACHE_HOME" "$XDG_CONFIG_HOME" "$XDG_DATA_HOME"; do
@@ -227,6 +247,9 @@ if [[ ! "$OS_GROUP_ID" == "fedora" ]]; then
   showfun install_google_sans_flex
   v install_google_sans_flex
 fi
+
+showfun preload_gtk_colors
+v preload_gtk_colors
 
 #####################################################################################
 

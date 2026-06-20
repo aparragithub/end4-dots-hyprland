@@ -12,6 +12,8 @@ Tips:
 ## illogical-impulse-audio
 - `cava`
   - Used in Quickshell config.
+- `easyeffects`
+  - Started by Hyprland and controlled from Quickshell audio widgets.
 - `pavucontrol-qt`
   - Used in Hyprland and Quickshell config.
 - `wireplumber`
@@ -64,14 +66,24 @@ Tips:
 - `breeze-plus`
   - [source](https://github.com/mjkim0727/breeze-plus)
   - Icon theme option.
+- `catppuccin-gtk-theme-mocha`
+  - GTK theme option.
+- `colloid-gtk-theme-git`
+  - GTK theme option.
 - `darkly-bin`
   - `darkly` is supposed to be set as the theme for Qt apps, just have not figured out how to properly set it yet.
+- `dracula-gtk-theme`
+  - GTK theme option.
 - `eza`
   - Used in Fish config: `alias ls 'eza --icons'`
 - `fish`
   - Widely used.
+- `fluent-gtk-theme-git`
+  - GTK theme option.
 - `fontconfig`
   - Basic component which is nearly a must.
+- `graphite-gtk-theme-git`
+  - GTK theme option.
 - `kitty`
   - Used in fuzzel, Hyprland and Quickshell config; kitty config is also included as dots.
 - `matugen-bin`
@@ -81,13 +93,21 @@ Tips:
   - Icon theme option.
 - `numix-circle-icon-theme-git`
   - [source](https://github.com/numixproject/numix-icon-theme-circle)
-  - Icon theme option.
+  - Default icon theme and icon theme option.
+- `nwg-look`
+  - GTK theme selector used to change themes, icons, cursors, and fonts.
+- `orchis-theme-git`
+  - Default GTK theme and GTK theme option.
 - `otf-space-grotesk`
   - [source](https://events.ccc.de/congress/2024/infos/styleguide.html)
   - Used in Quickshell and matugen config.
 - `papirus-icon-theme`
   - [source](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme)
   - Icon theme option.
+- `pop-icon-theme`
+  - Icon theme option.
+- `qogir-gtk-theme-git`
+  - GTK theme option.
 - `starship`
   - Used in Fish config.
 - `tela-icon-theme`
@@ -107,6 +127,8 @@ Tips:
   - Used in Hyprland, matugen, qt5ct, qt6ct and Quickshell config.
 - `ttf-twemoji`
   - Not explicitly used, but it may help as fallback for displaying emoji characters.
+- `whitesur-gtk-theme-git`
+  - GTK theme option.
 
 ## illogical-impulse-hyprland
 - `hyprland`

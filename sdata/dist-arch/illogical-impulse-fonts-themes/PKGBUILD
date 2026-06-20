@@ -1,7 +1,7 @@
 groups=(illogical-impulse)
 pkgname=illogical-impulse-fonts-themes
 pkgver=1.0
-pkgrel=7
+pkgrel=9
 pkgdesc='Illogical Impulse Fonts and Theming Dependencies'
 arch=(any)
 license=(None)
@@ -9,15 +9,24 @@ depends=(
   adw-gtk-theme-git
   breeze
   breeze-plus
+  catppuccin-gtk-theme-mocha
+  colloid-gtk-theme-git
   darkly-bin
+  dracula-gtk-theme
   eza
   fish
+  fluent-gtk-theme-git
   fontconfig
+  graphite-gtk-theme-git
   kitty
   matugen
   numix-circle-icon-theme-git
+  nwg-look
+  orchis-theme-git
   otf-space-grotesk
   papirus-icon-theme
+  pop-icon-theme
+  qogir-gtk-theme-git
   starship
   tela-icon-theme
   ttf-jetbrains-mono-nerd
@@ -25,4 +34,5 @@ depends=(
   ttf-readex-pro
   ttf-rubik-vf
   ttf-twemoji
+  whitesur-gtk-theme-git
 )
