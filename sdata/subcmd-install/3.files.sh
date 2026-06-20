@@ -224,6 +224,33 @@ function preload_gtk_colors(){
   v matugen --source-color-index 0 color hex '#bcc8d3' --mode dark --type scheme-tonal-spot
 }
 
+function apply_quickshell_defaults(){
+  local config_file="$XDG_CONFIG_HOME/illogical-impulse/config.json"
+
+  if ! command -v jq >/dev/null 2>&1; then
+    return
+  fi
+
+  if [[ ! -f "$config_file" ]]; then
+    return
+  fi
+
+  local tmp_file
+  tmp_file="$(mktemp)" || return
+
+  if jq \
+    '.bar.utilButtons.showKeyboardToggle = false |
+     .bar.utilButtons.showDarkModeToggle = false |
+     .dock.enable = true |
+     .dock.pinnedOnStartup = true |
+     .bar.resources.alwaysShowGpu = true' \
+    "$config_file" > "$tmp_file"; then
+    v cp -f "$tmp_file" "$config_file"
+  fi
+
+  rm -f "$tmp_file"
+}
+
 #####################################################################################
 # In case some dirs does not exists
 for i in "$XDG_BIN_HOME" "$XDG_CACHE_HOME" "$XDG_CONFIG_HOME" "$XDG_DATA_HOME"; do
@@ -263,6 +290,9 @@ fi
 
 showfun preload_gtk_colors
 v preload_gtk_colors
+
+showfun apply_quickshell_defaults
+v apply_quickshell_defaults
 
 #####################################################################################
 

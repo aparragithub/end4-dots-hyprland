@@ -47,10 +47,10 @@ MouseArea {
 
         Resource {
             iconName: "developer_board"
-            percentage: ResourceUsage.gpuUsage
-            shown: ResourceUsage.gpuAvailable && (Config.options.bar.resources.alwaysShowGpu ||
-                !(MprisController.activePlayer?.trackTitle?.length > 0) ||
-                root.alwaysShowAllResources)
+            percentage: ResourceUsage.gpuAvailable ? ResourceUsage.gpuUsage : 0
+            shown: Config.options.bar.resources.alwaysShowGpu ||
+                (ResourceUsage.gpuAvailable && !(MprisController.activePlayer?.trackTitle?.length > 0)) ||
+                root.alwaysShowAllResources
             Layout.leftMargin: shown ? 6 : 0
             warningThreshold: Config.options.bar.resources.gpuWarningThreshold
         }
