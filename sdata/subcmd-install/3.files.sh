@@ -201,6 +201,19 @@ function preload_gtk_colors(){
     return
   fi
 
+  local required_templates=(
+    "$XDG_CONFIG_HOME/matugen/templates/colors.json"
+    "$XDG_CONFIG_HOME/matugen/templates/gtk-3.0/gtk.css"
+    "$XDG_CONFIG_HOME/matugen/templates/gtk-4.0/gtk.css"
+  )
+
+  for template in "${required_templates[@]}"; do
+    if [[ ! -f "$template" ]]; then
+      printf "${STY_YELLOW}[$0]: Matugen template missing (%s), keeping default GTK colors.${STY_RST}\n" "$template"
+      return
+    fi
+  done
+
   if [[ -f "$XDG_CONFIG_HOME/illogical-impulse/config.json" ]] && \
     [[ "$(jq -r '.appearance.wallpaperTheming.enableAppsAndShell // true' "$XDG_CONFIG_HOME/illogical-impulse/config.json")" == "false" ]]; then
     printf "${STY_BLUE}[$0]: App and shell theming disabled, keeping existing GTK colors.${STY_RST}\n"
