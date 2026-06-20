@@ -86,6 +86,41 @@ nordvpn set firewall disabled
 > Acceptable here because the Kill Switch is also disabled. Re-enable with
 > `nordvpn set firewall enabled` if you turn the Kill Switch back on.
 
+### Password "stops being accepted" without the account being locked
+
+Symptom: sudo/login rejects the correct password; rebooting "fixes" it. The
+reboot only helps because time passes — the real cause is two PAM settings:
+
+1. **`pam_faillock`** locks authentication for `unlock_time` (default 600s)
+   after `deny` (default 3) failed attempts. A burst of failed auth (e.g. the
+   `pkexec`/update issues above) trips it, then every attempt is rejected for
+   ~10 minutes even with the right password. No reboot needed — just wait, or
+   reset the tally as root:
+
+   ```sh
+   faillock --user "$USER"            # inspect failed attempts
+   sudo faillock --user "$USER" --reset
+   ```
+
+2. **`pam_fprintd` prioritized in sudo** — CachyOS `chwd` adds
+   `auth sufficient pam_fprintd.so` as the **first** line of `/etc/pam.d/sudo`.
+   With a fingerprint reader present but **no fingerprint enrolled**, every
+   sudo first tries the (empty) fingerprint path, causing delays and failed
+   attempts that feed faillock. Fix — comment it out so sudo goes straight to
+   the password:
+
+   ```sh
+   sudo cp /etc/pam.d/sudo /etc/pam.d/sudo.bak
+   sudo sd '(?m)^(\s*auth\s+sufficient\s+pam_fprintd\.so.*)$' '#$1' /etc/pam.d/sudo
+   sudo faillock --user "$USER" --reset
+   # verify in another terminal, keeping a root shell open as a safety net:
+   sudo -k; sudo true
+   ```
+
+> The line is tagged `# chwd-fprintd`, so CachyOS's `chwd` may re-add it after
+> driver/hardware-detection runs. If it comes back, address it at the `chwd`
+> level. Alternative fix: actually enroll a fingerprint with `fprintd-enroll`.
+
 ---
 
 ## 3. Intel iGPU monitoring (Intel machines only)
