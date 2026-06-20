@@ -230,6 +230,31 @@ ContentPage {
     // }
 
     ContentSection {
+        icon: "monitoring"
+        title: Translation.tr("AI Usage")
+
+        StyledText {
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            color: Appearance.colors.colSubtext
+            font.pixelSize: Appearance.font.pixelSize.small
+            text: Translation.tr("Enable a provider to show the AI Usage tab in the sidebar. Requires Node.js for spend tracking via ccusage.")
+        }
+
+        ConfigSwitch {
+            buttonIcon: "auto_awesome"
+            text: Translation.tr("Claude")
+            checked: Config.options.sidebar.aiUsage.providers.claude.enable
+            onCheckedChanged: {
+                Config.options.sidebar.aiUsage.providers.claude.enable = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Shows Claude quota (5h/7d) and spend.\nRequires ~/.claude/.credentials.json (created by Claude Code).")
+            }
+        }
+    }
+
+    ContentSection {
         icon: "weather_mix"
         title: Translation.tr("Weather")
         ConfigRow {
