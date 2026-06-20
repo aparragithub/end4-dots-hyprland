@@ -30,7 +30,7 @@ jq '
   | .bar.workspaces.monochromeIcons = false                # full-color workspace icons
   | .tray.monochromeIcons = false                          # full-color tray icons
   | .bar.utilButtons.showPerformanceProfileToggle = true   # show power-profile toggle in bar
-  | .apps.update = "kitty -1 --hold=yes fish -i -c '\''sudo pacman -Syu'\''"  # see note below
+  | .apps.update = "kitty --hold sh -c '\''sudo pacman -Syu'\''"  # see note below
 ' config.json > config.json.tmp && mv config.json.tmp config.json
 ```
 
@@ -58,9 +58,12 @@ evaluated at startup. Rollback: `mv config.json.bak config.json`.
 
 The default update command used `pkexec pacman -Syu`. polkit authentication
 hangs/fails in this session context, so after typing the password nothing
-happens. Fix: run the update with `sudo` **inside the terminal** instead of
-`pkexec` — you type the password in the kitty window and pacman runs
-interactively. The repo default in
+happens. Switching to `sudo` is correct, but it must NOT run under an
+interactive shell: `fish -i -c 'sudo ...'` floods the terminal with fish's
+interactive init (color/OSC escape sequences) that bury sudo's password
+prompt, so the window looks blank/gray and never seems to ask. Run it under a
+plain `sh -c` (or sudo directly) so the prompt shows cleanly:
+`kitty --hold sh -c 'sudo pacman -Syu'`. The repo default in
 `dots/.config/quickshell/ii/modules/common/Config.qml` (`apps.update`) is
 already set to `sudo`; the `jq` snippet above also overrides it in `config.json`
 for existing installs.
