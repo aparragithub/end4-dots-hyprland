@@ -150,6 +150,11 @@ Singleton {
                 getNetworks.running = true;
             }
         }
+        onExited: (exitCode, exitStatus) => {
+            // Ensure the scanning flag is cleared even if the process fails or
+            // produces no stdout (e.g. no Wi-Fi devices).
+            wifiScanning = false;
+        }
     }
 
     // Status update

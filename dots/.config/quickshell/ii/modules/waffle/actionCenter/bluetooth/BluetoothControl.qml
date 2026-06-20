@@ -52,13 +52,14 @@ Item {
                             Layout.rightMargin: 12
                             checked: Bluetooth.defaultAdapter?.enabled ?? false
                             onCheckedChanged: {
-                                if (Bluetooth.defaultAdapter) {
-                                    Bluetooth.defaultAdapter.enabled = checked;
-                                    if (checked) {
-                                        Bluetooth.defaultAdapter.discovering = true;
-                                    } else {
-                                        Bluetooth.defaultAdapter.discovering = false;
-                                    }
+                                if (!Bluetooth.defaultAdapter) return;
+                                const wasEnabled = Bluetooth.defaultAdapter.enabled;
+                                if (checked && !wasEnabled) {
+                                    BluetoothStatus.enable();
+                                    Bluetooth.defaultAdapter.discovering = true;
+                                } else if (!checked && wasEnabled) {
+                                    BluetoothStatus.disable();
+                                    Bluetooth.defaultAdapter.discovering = false;
                                 }
                             }
                         }

@@ -80,6 +80,7 @@ Singleton {
 
     onIsSuspendingAndNotChargingChanged: {
         if (root.available && isSuspendingAndNotCharging) {
+            try { MprisController.pauseAll(); } catch (e) { console.error("[Battery] pauseAll before suspend failed:", e); }
             Quickshell.execDetached(["bash", "-c", `systemctl suspend || loginctl suspend`]);
         }
     }

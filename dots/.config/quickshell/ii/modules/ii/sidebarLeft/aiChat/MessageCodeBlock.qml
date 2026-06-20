@@ -22,6 +22,19 @@ ColumnLayout {
     property bool isCommandRequest: segmentLang === "command"
     property var displayLang: (isCommandRequest ? "bash" : segmentLang)
 
+    // Centralized language fallback: unknown tags fall back to plaintext for
+    // syntax highlighting, and the label falls back to the raw tag.
+    function definitionForLanguage(lang) {
+        return Repository.definitionForName(lang || "plaintext") || Repository.definitionForName("plaintext");
+    }
+
+    function languageLabel(lang) {
+        if (root.isCommandRequest) return Translation.tr("Command");
+        if (!lang) return "plain";
+        const def = Repository.definitionForName(lang);
+        return (def && def.name) ? def.name : lang;
+    }
+
     property real codeBlockBackgroundRounding: Appearance.rounding.small
     property real codeBlockHeaderPadding: 3
     property real codeBlockComponentSpacing: 2
@@ -56,7 +69,7 @@ ColumnLayout {
                 font.pixelSize: Appearance.font.pixelSize.small
                 font.weight: Font.DemiBold
                 color: Appearance.colors.colOnLayer2
-                text: root.displayLang ? Repository.definitionForName(root.displayLang).name : "plain"
+                text: root.languageLabel(root.displayLang)
             }
 
             Item { Layout.fillWidth: true }
@@ -243,7 +256,7 @@ ColumnLayout {
                             id: highlighter
                             textEdit: codeTextArea
                             repository: Repository
-                            definition: Repository.definitionForName(root.displayLang || "plaintext")
+                            definition: root.definitionForLanguage(root.displayLang)
                             theme: Appearance.syntaxHighlightingTheme
                         }
                     }

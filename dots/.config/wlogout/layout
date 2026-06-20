@@ -6,7 +6,7 @@
 }
 {
     "label" : "hibernate",
-    "action" : "systemctl hibernate || loginctl hibernate",
+    "action" : "qs -c ${qsConfig:-ii} ipc call mpris pauseAll 2>/dev/null; systemctl hibernate || loginctl hibernate",
     "text" : "downloading",
     "keybind" : "h"
 }
@@ -24,7 +24,7 @@
 }
 {
     "label" : "suspend",
-    "action" : "systemctl suspend || loginctl suspend",
+    "action" : "qs -c ${qsConfig:-ii} ipc call mpris pauseAll 2>/dev/null; systemctl suspend || loginctl suspend",
     "text" : "bedtime",
     "keybind" : "u"
 }

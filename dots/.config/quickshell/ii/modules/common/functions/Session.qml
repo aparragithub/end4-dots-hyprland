@@ -22,6 +22,7 @@ Singleton {
     }
 
     function suspend() {
+        try { MprisController.pauseAll(); } catch (e) { console.error("[Session] pauseAll before suspend failed:", e); }
         Quickshell.execDetached(["bash", "-c", "systemctl suspend || loginctl suspend"]);
     }
 
@@ -40,6 +41,7 @@ Singleton {
     }
 
     function hibernate() {
+        try { MprisController.pauseAll(); } catch (e) { console.error("[Session] pauseAll before hibernate failed:", e); }
         Quickshell.execDetached(["bash", "-c", `systemctl hibernate || loginctl hibernate`]);
     }
 
