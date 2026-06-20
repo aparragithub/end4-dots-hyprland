@@ -125,6 +125,16 @@ Each provider fails in isolation — one broken source never blanks the tab.
 - Historical charts / graphs of spend over time.
 - Notifications/alerts when crossing the threshold (gauge color only).
 
+## Dependencies (must be declared in project metadata)
+
+Any app this feature needs must be declared where the project already declares its apps: the **Arch meta-package PKGBUILDs** under `sdata/dist-arch/`. The basic CLI tooling (`curl`, `jq`, `ripgrep`…) lives in `sdata/dist-arch/illogical-impulse-basic/PKGBUILD` → `depends=(...)`. That is where this feature's new dependencies go — not assumed-present, not installed ad hoc.
+
+- `curl` / `jq` — already declared in `illogical-impulse-basic`. Reused, no change.
+- **Node runtime for `ccusage`** — `ccusage` runs via `npx`, which needs a Node runtime. `nodejs`/`npm` are currently only transitive (not in any PKGBUILD's `depends`). This feature makes them a direct requirement, so they must be declared explicitly in `illogical-impulse-basic` `depends`.
+- **`ccusage` itself** — fetched on demand by `npx ccusage@latest` (no global install). **Implementation-time check:** if a maintained AUR package for `ccusage` exists, prefer declaring that in the PKGBUILD (pinned, offline-capable) over relying on `npx` network fetch. AUR availability was not verifiable in this environment; verify during implementation.
+
+Rule going forward: **no app this feature depends on may be silently assumed — each is declared in the dist-arch meta-package.**
+
 ## Verification
 
 This is QML/Quickshell shell config; the repo has **no UI test runner**. Verification is **manual on the live shell**, documented as a checklist:
@@ -148,6 +158,7 @@ No "tests pass" claim will be made where no tests exist — only the observed re
 | `dots/.config/quickshell/ii/modules/ii/sidebarRight/BottomWidgetGroup.qml` | add tab entry |
 | `dots/.config/quickshell/ii/modules/common/Config.qml` | add `sidebar.aiUsage` config |
 | `dots/.config/quickshell/ii/modules/settings/ServicesConfig.qml` | add AI Usage settings section |
+| `sdata/dist-arch/illogical-impulse-basic/PKGBUILD` | declare Node runtime (and `ccusage` if AUR-packaged) in `depends` |
 
 ## References
 
