@@ -611,5 +611,20 @@
   "Use varying shapes for password characters": "Use varying shapes for password characters",
   "Battery full": "Battery full",
   "Pin": "Pin",
-  "Unpin": "Unpin"
+  "Unpin": "Unpin",
+  "AI Usage": "AI Usage",
+  "Loading quota…": "Loading quota…",
+  "Loading spend…": "Loading spend…",
+  "Quota unavailable": "Quota unavailable",
+  "Session (5h)": "Session (5h)",
+  "Spend": "Spend",
+  "Spend unavailable. Install ccusage: yay -S ccusage (npx fallback used automatically)": "Spend unavailable. Install ccusage: yay -S ccusage (npx fallback used automatically)",
+  "This month": "This month",
+  "This week": "This week",
+  "Today": "Today",
+  "Usage data unavailable. Check your Claude token and that Node.js is installed.": "Usage data unavailable. Check your Claude token and that Node.js is installed.",
+  "Week · All": "Week · All",
+  "Week · Sonnet": "Week · Sonnet",
+  "now": "now",
+  "tokens": "tokens"
 }

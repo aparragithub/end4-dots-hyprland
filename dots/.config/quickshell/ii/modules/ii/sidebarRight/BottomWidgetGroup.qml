@@ -18,8 +18,8 @@ Rectangle {
     property int previousIndex: -1
     property bool collapsed: Persistent.states.sidebar.bottomGroup.collapsed
 
-    // Base tabs always present
-    readonly property var _baseTabs: [
+    // Tabs (AI Usage now lives in the left sidebar, where there is more space).
+    readonly property var tabs: [
         {
             "type": "calendar",
             "name": Translation.tr("Calendar"),
@@ -40,25 +40,9 @@ Rectangle {
         },
     ]
 
-    // AI Usage tab is appended only when at least one AI provider is enabled.
-    // When it disappears, selectedTab is clamped so the Loader never points at
-    // a missing index.
-    readonly property bool _aiUsageEnabled: Config.options.sidebar.aiUsage.providers.claude.enable
-    readonly property var tabs: {
-        if (root._aiUsageEnabled) {
-            return root._baseTabs.concat([{
-                "type": "aiUsage",
-                "name": Translation.tr("AI Usage"),
-                "icon": "monitoring",
-                "widget": "aiUsage/AiUsageWidget.qml"
-            }]);
-        }
-        return root._baseTabs;
-    }
-
-    // Clamp the persisted tab index when the AI tab disappears so the Loader
-    // doesn't reference an out-of-bounds index.
-    onTabsChanged: {
+    // Clamp a stale persisted index (e.g. the old AI Usage tab) so the Loader
+    // never references an out-of-bounds entry.
+    Component.onCompleted: {
         if (root.selectedTab >= root.tabs.length) {
             const clamped = root.tabs.length - 1;
             root.selectedTab = clamped;

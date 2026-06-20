@@ -36,12 +36,14 @@ Singleton {
     property string subscriptionType: ""
 
     // Utilization 0-100; -1 means "not reported by the API"
-    property real fiveHour: 0
-    property real sevenDay: 0
+    property real fiveHour: 0          // current session (5h)
+    property real sevenDay: 0          // weekly, all models
+    property real sevenDaySonnet: 0    // weekly, Sonnet only
 
     // Reset timestamps (epoch ms; 0 if unknown)
     property double fiveHourReset: 0
     property double sevenDayReset: 0
+    property double sevenDaySonnetReset: 0
 
     // ── Claude: spend (ccusage) ──────────────────────────────────────────────
     property bool spentAvailable: false
@@ -99,8 +101,10 @@ Singleton {
         // gauge instead of drawing a misleading 0%.
         root.fiveHour           = data.five_hour?.utilization ?? -1;
         root.sevenDay           = data.seven_day?.utilization ?? -1;
+        root.sevenDaySonnet     = data.seven_day_sonnet?.utilization ?? -1;
         root.fiveHourReset      = root._parseIso(data.five_hour?.resets_at);
         root.sevenDayReset      = root._parseIso(data.seven_day?.resets_at);
+        root.sevenDaySonnetReset = root._parseIso(data.seven_day_sonnet?.resets_at);
         root.claudeAvailable    = true;
         root.claudeError        = "";
         root.quotaLoading       = false;
@@ -159,56 +163,54 @@ Singleton {
         spendFetcher.running = true;
     }
 
+    // Local YYYY-MM-DD for a Date (matches ccusage's daily `period` field).
+    function _ymd(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+    }
+
     function _refineSpend(data) {
-        // ccusage --json returns an array of daily/weekly/monthly breakdown rows.
-        // Structure: { daily: [{...}], weekly: [{...}], monthly: [{...}] }
-        // Each period has rows keyed by model; we want aggregate totals.
-        // Alternatively, ccusage may return a flat array with a "period" field.
-        // We handle both shapes defensively.
-        let todayCost = 0, weekCost = 0, monthCost = 0, todayTokens = 0;
-        // Track whether any recognized, non-empty spend field actually matched,
-        // so valid JSON in an unexpected shape (all-zero result) is reported as
-        // an unrecognized shape rather than masquerading as real spend data.
-        let matched = false;
+        // ccusage --json returns a `daily` array (one row per calendar day,
+        // `period` = "YYYY-MM-DD") plus a `totals` summary. There are NO
+        // weekly/monthly arrays, so today/week/month are computed by bucketing
+        // the daily rows against the real calendar. A bare array of daily rows
+        // is also accepted defensively.
+        const rows = Array.isArray(data)
+            ? data
+            : (data.daily ?? data.today ?? null);
 
-        function sumPeriod(rows) {
-            let cost = 0, tokens = 0;
-            if (!Array.isArray(rows) || rows.length === 0) return { cost, tokens, seen: false };
-            matched = true;
-            for (const row of rows) {
-                cost   += (row.totalCost   ?? row.cost   ?? 0);
-                tokens += (row.totalTokens ?? row.tokens ?? 0);
-            }
-            return { cost, tokens, seen: true };
-        }
-
-        if (Array.isArray(data)) {
-            // Flat array with period discriminator
-            const daily   = data.filter(r => r.period === "daily"   || r.period === "today");
-            const weekly  = data.filter(r => r.period === "weekly"  || r.period === "week");
-            const monthly = data.filter(r => r.period === "monthly" || r.period === "month");
-            todayCost   = sumPeriod(daily).cost;
-            weekCost    = sumPeriod(weekly).cost;
-            monthCost   = sumPeriod(monthly).cost;
-            todayTokens = sumPeriod(daily).tokens;
-        } else {
-            // Structured object shape: { daily: [...], weekly: [...], monthly: [...] }
-            const d = sumPeriod(data.daily   ?? data.today);
-            const w = sumPeriod(data.weekly  ?? data.week);
-            const m = sumPeriod(data.monthly ?? data.month);
-            todayCost   = d.cost;
-            weekCost    = w.cost;
-            monthCost   = m.cost;
-            todayTokens = d.tokens;
-        }
-
-        if (!matched) {
-            // Valid JSON, but none of the recognized period arrays were present
-            // or non-empty — treat as an unrecognized shape instead of $0.
+        if (!Array.isArray(rows) || rows.length === 0) {
             root.spentAvailable = false;
             root.spentError     = "unrecognized ccusage JSON shape";
             root.spentLoading   = false;
             return;
+        }
+
+        const now        = new Date();
+        const todayStr   = root._ymd(now);
+        // Last 7 calendar days inclusive of today.
+        const weekStart  = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+        const curYear    = now.getFullYear();
+        const curMonth   = now.getMonth();
+
+        let todayCost = 0, todayTokens = 0, weekCost = 0, monthCost = 0;
+
+        for (const row of rows) {
+            const p = row.period ?? row.date;
+            if (!p) continue;
+            const cost   = row.totalCost   ?? row.cost   ?? 0;
+            const tokens = row.totalTokens ?? row.tokens ?? 0;
+            const d = new Date(`${p}T00:00:00`);
+            if (isNaN(d.getTime())) continue;
+
+            if (p === todayStr) {
+                todayCost   += cost;
+                todayTokens += tokens;
+            }
+            if (d >= weekStart) weekCost += cost;
+            if (d.getFullYear() === curYear && d.getMonth() === curMonth) monthCost += cost;
         }
 
         root.spentTodayCost   = todayCost;

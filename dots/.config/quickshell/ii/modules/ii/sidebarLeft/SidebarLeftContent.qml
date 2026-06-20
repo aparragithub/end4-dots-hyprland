@@ -1,6 +1,7 @@
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.ii.sidebarLeft.aiUsage
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -16,11 +17,13 @@ Item {
     property bool translatorEnabled: Config.options.sidebar.translator.enable
     property bool animeEnabled: Config.options.policies.weeb !== 0
     property bool animeCloset: Config.options.policies.weeb === 2
+    property bool aiUsageEnabled: Config.options.sidebar.aiUsage.providers.claude.enable
     property var tabButtonList: [
         ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
         ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),
         ...((root.animeEnabled && !root.animeCloset) ? [{"icon": "bookmark_heart", "name": Translation.tr("Anime")}] : []),
-        {"icon": "edit_note", "name": Translation.tr("Notes")}
+        {"icon": "edit_note", "name": Translation.tr("Notes")},
+        ...(root.aiUsageEnabled ? [{"icon": "monitoring", "name": Translation.tr("AI Usage")}] : [])
     ]
     property int tabCount: swipeView.count
 
@@ -89,6 +92,7 @@ Item {
                     ...(root.translatorEnabled ? [translator.createObject()] : []),
                     ...(root.animeEnabled ? [anime.createObject()] : []),
                     scratchpad.createObject(),
+                    ...(root.aiUsageEnabled ? [aiUsage.createObject()] : []),
                 ]
             }
         }
@@ -108,6 +112,10 @@ Item {
         Component {
             id: scratchpad
             Scratchpad {}
+        }
+        Component {
+            id: aiUsage
+            AiUsageWidget {}
         }
     }
 }

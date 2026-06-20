@@ -21,20 +21,25 @@ import QtQuick.Controls
 Item {
     id: root
 
-    Component.onCompleted:   { AiUsage.tabVisible = true;  }
+    // The left-sidebar SwipeView instantiates every tab up front, so gate the
+    // service on whether THIS tab is the visible one — otherwise polling would
+    // start as soon as the sidebar opens, regardless of the active tab.
+    property bool active: SwipeView.view ? SwipeView.isCurrentItem : visible
+    onActiveChanged: AiUsage.tabVisible = root.active
+    Component.onCompleted:   { AiUsage.tabVisible = root.active; }
     Component.onDestruction: { AiUsage.tabVisible = false; }
 
-    // ── Helper: format cost as $X.XXXX ──────────────────────────────────────
+    // ── Helper: format cost as whole dollars, always rounded up ──────────────
     function formatCost(v) {
-        if (typeof v !== "number" || isNaN(v)) return "$0.0000";
-        return "$" + v.toFixed(4);
+        if (typeof v !== "number" || isNaN(v)) return "$0";
+        return "$" + Math.ceil(v);
     }
 
-    // ── Helper: format token count ───────────────────────────────────────────
+    // ── Helper: format token count (no decimals, rounded up) ─────────────────
     function formatTokens(n) {
         if (typeof n !== "number" || isNaN(n)) return "0";
-        if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
-        if (n >= 1_000)     return (n / 1_000).toFixed(1) + "k";
+        if (n >= 1_000_000) return Math.ceil(n / 1_000_000) + "M";
+        if (n >= 1_000)     return Math.ceil(n / 1_000) + "k";
         return String(n);
     }
 
@@ -249,7 +254,7 @@ Item {
                                     font.pixelSize: Appearance.font.pixelSize.small
                                     font.weight: Font.Medium
                                     color: Appearance.colors.colOnLayer1
-                                    text: Translation.tr("Week (7d)")
+                                    text: Translation.tr("Week · All")
                                 }
 
                                 StyledText {
@@ -257,6 +262,53 @@ Item {
                                     font.pixelSize: Appearance.font.pixelSize.smaller
                                     color: Appearance.colors.colSubtext
                                     text: AiUsage.timeUntil(AiUsage.sevenDayReset)
+                                }
+                            }
+
+                            // ── 7-day Sonnet gauge ───────────────────────────
+                            ColumnLayout {
+                                // -1 means "not reported by the API" → hide the
+                                // gauge rather than drawing a misleading 0%.
+                                visible: AiUsage.sevenDaySonnet >= 0
+                                Layout.alignment: Qt.AlignHCenter
+                                spacing: 4
+
+                                ClippedFilledCircularProgress {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    implicitSize: 64
+                                    lineWidth: 4
+                                    enableAnimation: true
+                                    value: Math.max(0, Math.min(1, AiUsage.sevenDaySonnet / 100))
+                                    colPrimary: AiUsage.sevenDaySonnet >= Config.options.sidebar.aiUsage.warningThreshold
+                                        ? Appearance.colors.colError
+                                        : Appearance.colors.colPrimary
+                                    accountForLightBleeding: AiUsage.sevenDaySonnet < Config.options.sidebar.aiUsage.warningThreshold
+
+                                    Item {
+                                        width: 64; height: 64
+                                        StyledText {
+                                            anchors.centerIn: parent
+                                            font.pixelSize: Appearance.font.pixelSize.small
+                                            font.weight: Font.Medium
+                                            color: Appearance.colors.colOnLayer1
+                                            text: Math.round(AiUsage.sevenDaySonnet) + "%"
+                                        }
+                                    }
+                                }
+
+                                StyledText {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    font.pixelSize: Appearance.font.pixelSize.small
+                                    font.weight: Font.Medium
+                                    color: Appearance.colors.colOnLayer1
+                                    text: Translation.tr("Week · Sonnet")
+                                }
+
+                                StyledText {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    font.pixelSize: Appearance.font.pixelSize.smaller
+                                    color: Appearance.colors.colSubtext
+                                    text: AiUsage.timeUntil(AiUsage.sevenDaySonnetReset)
                                 }
                             }
                         }
@@ -298,7 +350,9 @@ Item {
                             text: Translation.tr("Spend unavailable. Install ccusage: yay -S ccusage (npx fallback used automatically)")
                         }
 
-                        // Spend rows
+                        // Spend table: label | cost | tokens, columns aligned so
+                        // each value sits under its own column. Rows without a
+                        // token figure leave the tokens cell empty.
                         ColumnLayout {
                             visible: AiUsage.spentAvailable
                             Layout.fillWidth: true
@@ -311,9 +365,13 @@ Item {
                                 text: Translation.tr("Spend")
                             }
 
-                            // Today
-                            RowLayout {
+                            GridLayout {
                                 Layout.fillWidth: true
+                                columns: 3
+                                columnSpacing: 16
+                                rowSpacing: 4
+
+                                // ── Today ─────────────────────────────────────
                                 StyledText {
                                     Layout.fillWidth: true
                                     font.pixelSize: Appearance.font.pixelSize.small
@@ -321,18 +379,20 @@ Item {
                                     text: Translation.tr("Today")
                                 }
                                 StyledText {
+                                    Layout.alignment: Qt.AlignRight
                                     font.pixelSize: Appearance.font.pixelSize.small
                                     color: Appearance.colors.colOnLayer1
                                     text: root.formatCost(AiUsage.spentTodayCost)
-                                           + "  ·  "
-                                           + root.formatTokens(AiUsage.spentTodayTokens)
+                                }
+                                StyledText {
+                                    Layout.alignment: Qt.AlignRight
+                                    font.pixelSize: Appearance.font.pixelSize.small
+                                    color: Appearance.colors.colSubtext
+                                    text: root.formatTokens(AiUsage.spentTodayTokens)
                                            + " " + Translation.tr("tokens")
                                 }
-                            }
 
-                            // This week
-                            RowLayout {
-                                Layout.fillWidth: true
+                                // ── This week ─────────────────────────────────
                                 StyledText {
                                     Layout.fillWidth: true
                                     font.pixelSize: Appearance.font.pixelSize.small
@@ -340,15 +400,14 @@ Item {
                                     text: Translation.tr("This week")
                                 }
                                 StyledText {
+                                    Layout.alignment: Qt.AlignRight
                                     font.pixelSize: Appearance.font.pixelSize.small
                                     color: Appearance.colors.colOnLayer1
                                     text: root.formatCost(AiUsage.spentWeekCost)
                                 }
-                            }
+                                StyledText { text: "" }
 
-                            // This month
-                            RowLayout {
-                                Layout.fillWidth: true
+                                // ── This month ────────────────────────────────
                                 StyledText {
                                     Layout.fillWidth: true
                                     font.pixelSize: Appearance.font.pixelSize.small
@@ -356,10 +415,12 @@ Item {
                                     text: Translation.tr("This month")
                                 }
                                 StyledText {
+                                    Layout.alignment: Qt.AlignRight
                                     font.pixelSize: Appearance.font.pixelSize.small
                                     color: Appearance.colors.colOnLayer1
                                     text: root.formatCost(AiUsage.spentMonthCost)
                                 }
+                                StyledText { text: "" }
                             }
                         }
                     }

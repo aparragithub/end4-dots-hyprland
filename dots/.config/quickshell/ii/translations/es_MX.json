@@ -745,5 +745,20 @@
   "Font size": "Tamaño de fuente",
   "System": "Sistema",
   "More Internet settings": "Más ajustes de Internet",
-  "Utility buttons": "Botones de utilidad"
+  "Utility buttons": "Botones de utilidad",
+  "AI Usage": "Uso de IA",
+  "Usage data unavailable. Check your Claude token and that Node.js is installed.": "Datos de uso no disponibles. Verifica tu token de Claude y que Node.js esté instalado.",
+  "Loading quota…": "Cargando cuota…",
+  "Quota unavailable": "Cuota no disponible",
+  "Session (5h)": "Sesión (5h)",
+  "Week · All": "Semana · Todos",
+  "Week · Sonnet": "Semana · Sonnet",
+  "Loading spend…": "Cargando gasto…",
+  "Spend unavailable. Install ccusage: yay -S ccusage (npx fallback used automatically)": "Gasto no disponible. Instala ccusage: yay -S ccusage (se usa npx como alternativa automáticamente)",
+  "Spend": "Gasto",
+  "Today": "Hoy",
+  "tokens": "tokens",
+  "This week": "Esta semana",
+  "This month": "Este mes",
+  "now": "ahora"
 }
