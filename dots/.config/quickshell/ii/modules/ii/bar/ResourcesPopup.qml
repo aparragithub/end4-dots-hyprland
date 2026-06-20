@@ -101,6 +101,7 @@ StyledPopup {
         }
 
         Column {
+            visible: ResourceUsage.gpuAvailable
             anchors.top: parent.top
             spacing: 8
 
@@ -113,9 +114,10 @@ StyledPopup {
                 StyledPopupValueRow {
                     icon: "bolt"
                     label: Translation.tr("Load:")
-                    value: ResourceUsage.gpuAvailable ? `${Math.round(ResourceUsage.gpuUsage * 100)}%` : "--"
+                    value: `${Math.round(ResourceUsage.gpuUsage * 100)}%`
                 }
                 StyledPopupValueRow {
+                    visible: ResourceUsage.gpuTemperature >= 0
                     icon: "device_thermostat"
                     label: Translation.tr("Temp:")
                     value: root.formatTemperature(ResourceUsage.gpuTemperature)

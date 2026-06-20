@@ -136,6 +136,14 @@ if [ -z "$gpu_usage" ]; then
     done
 fi
 
+# Intel iGPU: no gpu_busy_percent in sysfs, sample the i915 PMU via intel_gpu_top.
+# Requires intel-gpu-tools and cap_perfmon on the binary (perf_event_paranoid gated).
+if [ -z "$gpu_usage" ] && command -v intel_gpu_top >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+    gpu_usage="$(intel_gpu_top -J -s 200 -n 2 -o - 2>/dev/null \
+        | jq -r '(if type=="array" then .[-1] else . end) | [.engines[].busy] | max | floor' 2>/dev/null \
+        | tr -dc '0-9')"
+fi
+
 if [ -z "$gpu_temp" ]; then
     for f in /sys/class/drm/card*/device/hwmon/hwmon*/temp*_input /sys/class/hwmon/hwmon*/temp*_input; do
         [ -r "$f" ] || continue
@@ -145,6 +153,16 @@ if [ -z "$gpu_temp" ]; then
         case "$label $name" in
             *gpu*|*amdgpu*|*radeon*|*nvidia*) gpu_temp="$(( $(cat "$f") / 1000 ))"; break ;;
         esac
+    done
+fi
+
+# Intel iGPU has no dedicated temperature sensor (it shares the CPU die).
+# When usage came from intel_gpu_top, report the package temperature instead.
+if [ -z "$gpu_temp" ] && command -v intel_gpu_top >/dev/null 2>&1; then
+    for z in /sys/class/thermal/thermal_zone*; do
+        [ "$(cat "$z/type" 2>/dev/null)" = "x86_pkg_temp" ] || continue
+        gpu_temp="$(( $(cat "$z/temp" 2>/dev/null) / 1000 ))"
+        break
     done
 fi
 
