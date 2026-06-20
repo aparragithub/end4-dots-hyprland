@@ -747,9 +747,7 @@ Item {
                             font.pixelSize: Appearance.font.pixelSize.large
                             font.weight: Font.Medium
                             color: Appearance.colors.colOnLayer1
-                            text: AntigravityUsage.tier.length > 0
-                                ? "Antigravity · " + AntigravityUsage.tier
-                                : "Antigravity"
+                            text: "Antigravity"
                         }
 
                         MouseArea {
@@ -798,70 +796,86 @@ Item {
                             : Translation.tr("Quota unavailable")
                     }
 
-                    // ── Per-curated-model quota gauges ───────────────────────
-                    // NO token count, NO cost block (per REQ-AGY-05 / ADR-5).
-                    // Each model uses a compact horizontal bar with % and reset time.
+                    // ── Grouped quota gauges (weekly + 5h per group) ────────────
+                    // NO token count, NO cost block (per REQ-AGY-05 / ADR-7).
+                    // Server provides grouping via retrieveUserQuotaSummary.
+                    // Each group renders as: group name label + two circular gauges.
                     ColumnLayout {
                         visible: antigravityCard.dataOk
                         Layout.fillWidth: true
-                        spacing: 8
+                        spacing: 12
 
                         Repeater {
-                            model: {
-                                const b = AntigravityUsage.buckets;
-                                return Object.keys(b).map(k => ({ name: k, data: b[k] }));
-                            }
+                            model: AntigravityUsage.groups
 
                             delegate: ColumnLayout {
                                 required property var modelData
                                 Layout.fillWidth: true
-                                spacing: 2
+                                spacing: 8
 
-                                // Model label + percentage + reset time
-                                RowLayout {
+                                // Group name subheading
+                                StyledText {
                                     Layout.fillWidth: true
-                                    spacing: 6
-
-                                    StyledText {
-                                        Layout.fillWidth: true
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        font.weight: Font.Medium
-                                        color: Appearance.colors.colOnLayer1
-                                        text: modelData.name
-                                        elide: Text.ElideRight
-                                    }
-
-                                    StyledText {
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        color: modelData.data.usedPercent >= Config.options.sidebar.aiUsage.warningThreshold
-                                            ? Appearance.colors.colError
-                                            : Appearance.colors.colOnLayer1
-                                        text: Math.round(modelData.data.usedPercent) + "%"
-                                    }
-
-                                    StyledText {
-                                        font.pixelSize: Appearance.font.pixelSize.smaller
-                                        color: Appearance.colors.colSubtext
-                                        text: modelData.data.resetTime
-                                            ? AntigravityUsage.timeUntil(new Date(modelData.data.resetTime).getTime())
-                                            : "—"
-                                    }
+                                    font.pixelSize: Appearance.font.pixelSize.small
+                                    font.weight: Font.Medium
+                                    color: Appearance.colors.colOnLayer1
+                                    text: modelData.name
+                                    elide: Text.ElideRight
                                 }
 
-                                // Progress bar
-                                Rectangle {
+                                // Bucket gauges row (Weekly + 5h)
+                                RowLayout {
                                     Layout.fillWidth: true
-                                    height: 4
-                                    radius: 2
-                                    color: Appearance.colors.colLayer3
+                                    spacing: 20
 
-                                    Rectangle {
-                                        width: parent.width * Math.max(0, Math.min(1, modelData.data.usedPercent / 100))
-                                        height: parent.height
-                                        radius: parent.radius
-                                        color: modelData.data.usedPercent >= Config.options.sidebar.aiUsage.warningThreshold
-                                            ? Appearance.colors.colError
-                                            : Appearance.colors.colPrimary
+                                    Repeater {
+                                        model: modelData.buckets
+
+                                        delegate: ColumnLayout {
+                                            required property var modelData
+                                            Layout.alignment: Qt.AlignHCenter
+                                            spacing: 4
+
+                                            ClippedFilledCircularProgress {
+                                                Layout.alignment: Qt.AlignHCenter
+                                                implicitSize: 64
+                                                lineWidth: 4
+                                                enableAnimation: true
+                                                value: Math.max(0, Math.min(1, modelData.usedPercent / 100))
+                                                colPrimary: modelData.usedPercent >= Config.options.sidebar.aiUsage.warningThreshold
+                                                    ? Appearance.colors.colError
+                                                    : Appearance.colors.colPrimary
+                                                accountForLightBleeding: modelData.usedPercent < Config.options.sidebar.aiUsage.warningThreshold
+
+                                                Item {
+                                                    width: 64; height: 64
+                                                    StyledText {
+                                                        anchors.centerIn: parent
+                                                        font.pixelSize: Appearance.font.pixelSize.small
+                                                        font.weight: Font.Medium
+                                                        color: Appearance.colors.colOnLayer1
+                                                        text: Math.round(modelData.usedPercent) + "%"
+                                                    }
+                                                }
+                                            }
+
+                                            StyledText {
+                                                Layout.alignment: Qt.AlignHCenter
+                                                font.pixelSize: Appearance.font.pixelSize.small
+                                                font.weight: Font.Medium
+                                                color: Appearance.colors.colOnLayer1
+                                                text: modelData.displayName
+                                            }
+
+                                            StyledText {
+                                                Layout.alignment: Qt.AlignHCenter
+                                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                                color: Appearance.colors.colSubtext
+                                                text: modelData.resetTime
+                                                    ? AntigravityUsage.timeUntil(new Date(modelData.resetTime).getTime())
+                                                    : "—"
+                                            }
+                                        }
                                     }
                                 }
                             }

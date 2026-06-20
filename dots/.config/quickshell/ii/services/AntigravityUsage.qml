@@ -7,26 +7,31 @@ import QtQuick
 import qs.modules.common
 
 /**
- * Antigravity (agy) usage service — quota only, no tokens, no cost.
+ * Antigravity (agy) usage service — grouped quota only, no tokens, no cost.
  *
  * Token counts and cost MUST NOT be displayed for Antigravity; the API does
  * not expose them and fabricating values would be a correctness violation.
  *
  * Data source:
- *   Quota: POST cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota
- *   Tier:  POST .../v1internal:loadCodeAssist
+ *   POST https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary
  *   Token: read at runtime from OS keyring via `secret-tool lookup service
  *          gemini username antigravity`. The token is NEVER stored in any QML
  *          property, file, or log — it lives only in the spawned bash subprocess.
  *
+ * Response model: groups[] → each group has displayName + buckets[].
+ * Each bucket has: window ("weekly" | "5h"), displayName, remainingFraction,
+ * resetTime (ISO-8601 UTC string).
+ *
+ * usedPercent = (1 - remainingFraction) * 100 — consistent with Claude/Codex
+ * gauges (red near limit = high used %).
+ *
  * User-Agent: antigravity/cli/1.0.9 linux/x86_64 (version confirmed 2026-06-20;
  *   Gemini-CLI UA returns 403 SUBSCRIPTION_REQUIRED — this UA is load-bearing).
  *
- * Curated model subset (ADR-5): display only high-value, quota-constrained models.
- * Matched by modelId prefix so minor version drift is tolerated automatically.
- * Models absent from live buckets are silently omitted (no error).
- *
  * Polling: visibility-gated — only when tabVisible && antigravity.enable.
+ *
+ * ADR-7 (supersedes ADR-5): server provides grouping via retrieveUserQuotaSummary.
+ * No client-side curated model list needed; groups and labels are server-driven.
  */
 Singleton {
     id: root
@@ -37,24 +42,13 @@ Singleton {
     // ── Data properties ──────────────────────────────────────────────────────
     property bool available: false
     property string error: ""
-    property string tier: ""
 
-    // Curated model buckets: model display-name -> { usedPercent, resetTime }
-    // Populated by _refineBuckets; absent curated models are simply not present.
-    property var buckets: ({})
+    // groups: array of { name: string, buckets: [{ window, displayName, usedPercent, resetTime }] }
+    // Populated by _parseGroups on successful fetch.
+    property var groups: []
 
     // ── Loading flag ─────────────────────────────────────────────────────────
     property bool usageLoading: Config.options.sidebar.aiUsage.providers.antigravity.enable
-
-    // ── Curated model list — edit this array to change which models appear ───
-    // Matched by prefix against bucket.modelId (tolerates version drift).
-    // Order here is the display order in the widget.
-    readonly property var _curatedModels: [
-        { prefix: "gemini-2.5-pro",            label: "Gemini 2.5 Pro" },
-        { prefix: "claude-opus-4-6",            label: "Claude Opus 4.6" },
-        { prefix: "claude-sonnet-4-6",          label: "Claude Sonnet 4.6" },
-        { prefix: "gemini-2.0-flash",           label: "Gemini 2.0 Flash" }
-    ]
 
     // ── Internal helpers ─────────────────────────────────────────────────────
     function timeUntil(epochMs) {
@@ -82,40 +76,37 @@ Singleton {
         quotaFetcher.running = true;
     }
 
-    function _refineBuckets(data) {
+    function _parseGroups(data) {
         if (data.error) {
-            root.available = false;
-            root.error = String(data.error);
+            root.available    = false;
+            root.error        = String(data.error);
             root.usageLoading = false;
             return;
         }
 
-        root.tier = data.tier ?? "";
+        const rawGroups = data.groups ?? [];
+        const result = [];
 
-        const rawBuckets = data.buckets ?? [];
-        const result = {};
-
-        for (const curatedEntry of root._curatedModels) {
-            // Find first bucket whose modelId starts with the curated prefix
-            const match = rawBuckets.find(b =>
-                typeof b.modelId === "string" &&
-                b.modelId.startsWith(curatedEntry.prefix)
-            );
-            if (!match) continue;
-
-            const remaining = typeof match.remainingFraction === "number"
-                ? match.remainingFraction
-                : 1.0;
-
-            result[curatedEntry.label] = {
-                usedPercent: Math.max(0, Math.min(100, (1.0 - remaining) * 100)),
-                resetTime:   match.resetTime ?? null
-            };
+        for (const g of rawGroups) {
+            const name = g.displayName ?? "";
+            const buckets = [];
+            for (const b of (g.buckets ?? [])) {
+                const remaining = typeof b.remainingFraction === "number"
+                    ? b.remainingFraction
+                    : 1.0;
+                buckets.push({
+                    window:      b.window      ?? "",
+                    displayName: b.displayName ?? b.window ?? "",
+                    usedPercent: Math.max(0, Math.min(100, (1.0 - remaining) * 100)),
+                    resetTime:   b.resetTime   ?? null
+                });
+            }
+            result.push({ name, buckets });
         }
 
-        root.buckets    = result;
-        root.available  = true;
-        root.error      = "";
+        root.groups       = result;
+        root.available    = true;
+        root.error        = "";
         root.usageLoading = false;
     }
 
@@ -143,23 +134,17 @@ Singleton {
             "if [ -z \"$tok\" ]; then " +
             "  echo '{\"error\":\"not signed in (no access_token in keyring)\"}'; exit 0; " +
             "fi; " +
-            // Step 2: fetch quota and tier in parallel (same token, two calls)
+            // Step 2: call retrieveUserQuotaSummary — server provides grouped weekly+5h data
             "UA='antigravity/cli/1.0.9 linux/x86_64'; " +
-            "q=$(curl -s --max-time 10 " +
+            "resp=$(curl -s --max-time 10 " +
+            "  -X POST " +
             "  -H \"Authorization: Bearer $tok\" " +
             "  -H \"User-Agent: $UA\" " +
             "  -H 'Content-Type: application/json' " +
             "  -d '{}' " +
-            "  'https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota' 2>/dev/null); " +
-            "c=$(curl -s --max-time 10 " +
-            "  -H \"Authorization: Bearer $tok\" " +
-            "  -H \"User-Agent: $UA\" " +
-            "  -H 'Content-Type: application/json' " +
-            "  -d '{\"metadata\":{\"ideType\":\"ANTIGRAVITY\",\"platform\":\"PLATFORM_UNSPECIFIED\",\"pluginType\":\"GEMINI\"}}' " +
-            "  'https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist' 2>/dev/null); " +
-            // Step 3: merge into compact JSON; token never appears in output
-            "jq -cn --argjson q \"$q\" --argjson c \"$c\" " +
-            "'{tier: ($c.tier // $c.currentTier.id // null), buckets: ($q.buckets // [])}' " +
+            "  'https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary' 2>/dev/null); " +
+            // Step 3: forward groups array; token never appears in output
+            "echo \"$resp\" | jq -c '{groups: (.groups // [])}' " +
             "2>/dev/null || echo '{\"error\":\"unavailable (parse failed)\"}'"
         ]
         stdout: StdioCollector {
@@ -173,7 +158,7 @@ Singleton {
                 }
                 try {
                     const d = JSON.parse(raw);
-                    root._refineBuckets(d);
+                    root._parseGroups(d);
                 } catch (e) {
                     root.available = false;
                     root.error = e.message;
