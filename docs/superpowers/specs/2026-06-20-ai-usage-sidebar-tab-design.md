@@ -60,7 +60,7 @@ We want something better: a dedicated **sidebar tab**, **multi-provider** (over 
 ### Components
 
 **`services/AiUsage.qml`** — Singleton, follows the `Weather.qml` / `ResourceUsage.qml` pattern (Singleton + Timer + `Process`/`StdioCollector`).
-- Inputs: `Config.options.sidebar.aiUsage` (master `enable`, `fetchInterval`, `warningThreshold`, `providers.claude.enable`).
+- Inputs: `Config.options.sidebar.aiUsage` (`fetchInterval`, `warningThreshold`, `providers.claude.enable`). No master enable — a provider being enabled is what activates the feature.
 - State exposed (Claude cut):
   - `claudeAvailable: bool`, `claudeError: string`
   - Remaining: `fiveHour`, `sevenDay` (0–100), `fiveHourReset`, `sevenDayReset` (epoch ms), `subscriptionType`
@@ -85,7 +85,6 @@ We want something better: a dedicated **sidebar tab**, **multi-provider** (over 
 **`modules/common/Config.qml`** — add under `sidebar`:
 ```qml
 property JsonObject aiUsage: JsonObject {
-    property bool enable: false
     property int fetchInterval: 5      // minutes
     property int warningThreshold: 90  // % → gauge turns red
     property JsonObject providers: JsonObject {
@@ -94,7 +93,9 @@ property JsonObject aiUsage: JsonObject {
 }
 ```
 
-**`modules/settings/ServicesConfig.qml`** — a small "AI Usage" section: master enable + a `ConfigSwitch` for Claude (Codex/opencode toggles added with their providers later).
+**Tab visibility:** there is **no master toggle**. The tab is shown if and only if **at least one provider is enabled** (`providers.*.enable`). All providers default OFF → tab hidden by default, existing users unaffected, no extra click to "turn the tab on".
+
+**`modules/settings/ServicesConfig.qml`** — a small "AI Usage" section: a `ConfigSwitch` per provider (only Claude in this cut; Codex/opencode toggles added with their providers later). No master toggle — enabling any provider makes the tab appear.
 
 ## Data Flow
 
