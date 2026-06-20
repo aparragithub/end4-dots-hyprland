@@ -37,24 +37,15 @@ hl.window_rule({match = {class = "^(org.pulseaudio.pavucontrol)$" },         cen
 hl.window_rule({match = {class = "^(nm-connection-editor)$" },               float = true})
 hl.window_rule({match = {class = "^(nm-connection-editor)$" },               size = {"(monitor_w*0.45)", "(monitor_h*0.45)"} })
 hl.window_rule({match = {class = "^(nm-connection-editor)$" },               center = true})
-hl.window_rule({match = {class = ".*plasmawindowed.*" },                     float = true})
-hl.window_rule({match = {class = "kcm_.*" },                                  float = true})
-hl.window_rule({match = {class = ".*bluedevilwizard" },                      float = true})
+hl.window_rule({match = {class = "^(blueman-manager)$" },                     float = true})
+hl.window_rule({match = {class = "^(blueman-manager)$" },                     center = true})
 hl.window_rule({match = {title = ".*Welcome" },                              float = true})
 hl.window_rule({match = {title = "^(illogical-impulse Settings)$" },         float = true})
 hl.window_rule({match = {title = ".*Shell conflicts.*" },                    float = true})
-hl.window_rule({match = {class = "org.freedesktop.impl.portal.desktop.kde" }, float = true})
-hl.window_rule({match = {class = "org.freedesktop.impl.portal.desktop.kde" }, size = {"(monitor_w*0.60)", "(monitor_h*0.65)"} })
 hl.window_rule({match = {class = "^(Zotero)$" },                             float = true})
 hl.window_rule({match = {class = "^(Zotero)$" },                             size = {"(monitor_w*0.45)", "(monitor_h*0.45)"} })
 
 -- Move
--- kde-material-you-colors spawns a window when changing dark/light theme. This is to make sure it doesn't interfere at all.
-hl.window_rule({match = {class = "^(plasma-changeicons)$" }, float = true})
-hl.window_rule({match = {class = "^(plasma-changeicons)$" }, no_initial_focus = true})
-hl.window_rule({match = {class = "^(plasma-changeicons)$" }, move = {999999, 999999}})
--- stupid dolphin copy
-hl.window_rule({match = {title = "^(Copying — Dolphin)$" }, move = {40, 80}})
 
 -- Tiling
 hl.window_rule({match = {class = "^dev\\.warp\\.Warp$" }, tile = true})

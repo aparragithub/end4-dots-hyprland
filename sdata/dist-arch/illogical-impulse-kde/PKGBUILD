@@ -1,17 +1,19 @@
 groups=(illogical-impulse)
 pkgname=illogical-impulse-kde
 pkgver=1.0
-pkgrel=12
+pkgrel=14
 pkgdesc='Illogical Impulse KDE Dependencies'
 arch=(any)
 license=(None)
 depends=(
   altus-bin
   bitwarden
-  bluedevil
+  blueman
+  gnome-control-center
   gnome-system-monitor
   gnome-keyring
   networkmanager
+  nautilus
   nemo
   nemo-fileroller
   nemo-terminal
@@ -21,13 +23,14 @@ depends=(
   openai-codex
   openai-codex-desktop
   opencode
-  plasma-nm
-  polkit-kde-agent
+  network-manager-applet
+  polkit-gnome
   qimgv
+  qt6ct
   sddm
   sddm-theme-sugar-candy-git
   visual-studio-code-bin
   zed
   zen-browser-bin
-  systemsettings
+  zenity
 )

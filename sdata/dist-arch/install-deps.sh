@@ -114,7 +114,7 @@ case $SKIP_PLASMAINTG in
       echo -e "${STY_YELLOW}Install it? [y/N]${STY_RST}"
       read -p "====> " p
     else
-      p=y
+      p=N
     fi
     case $p in
       y) x sudo pacman -S --needed --noconfirm plasma-browser-integration ;;
