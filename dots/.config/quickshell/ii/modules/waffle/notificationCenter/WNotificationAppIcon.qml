@@ -1,7 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import org.kde.kirigami as Kirigami
+import Quickshell.Widgets
+import Qt5Compat.GraphicalEffects
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
@@ -16,15 +17,21 @@ Item {
     implicitWidth: implicitSize
     implicitHeight: implicitSize
 
-    Kirigami.Icon {
+    IconImage {
+        id: iconImage
         anchors.fill: parent
         implicitWidth: root.implicitSize
         implicitHeight: root.implicitSize
 
-        source: root.icon || fallback
-        fallback: `${Looks.iconsPath}/apps.svg`
-        roundToIconSize: false
-        isMask: !root.icon
+        source: root.icon || `${Looks.iconsPath}/apps.svg`
+        implicitSize: root.implicitSize
+        visible: root.icon !== ""
+    }
+
+    ColorOverlay {
+        anchors.fill: iconImage
+        source: iconImage
         color: Looks.colors.fg
+        visible: root.icon === ""
     }
 }

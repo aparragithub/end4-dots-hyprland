@@ -1,22 +1,37 @@
 import QtQuick
-import org.kde.kirigami as Kirigami
+import Qt5Compat.GraphicalEffects
+import Quickshell
+import Quickshell.Widgets
 import qs.services
 import qs.modules.common
 
-Kirigami.Icon {
+Item {
     id: root
     required property string iconName
     property bool separateLightDark: false
     property bool tryCustomIcon: true
+    property bool animated: true
+    property bool isMask: true
+    property string fallback: `${Looks.iconsPath}/apps.svg`
     
     property real implicitSize: 26
     implicitWidth: implicitSize
     implicitHeight: implicitSize
 
-    animated: true
-    roundToIconSize: false
-    fallback: root.iconName
-    source: tryCustomIcon ? `${Looks.iconsPath}/${root.iconName}${!root.separateLightDark ? "" : Looks.dark ? "-dark" : "-light"}.svg` : fallback
+    readonly property string iconSource: tryCustomIcon ? `${Looks.iconsPath}/${root.iconName}${!root.separateLightDark ? "" : Looks.dark ? "-dark" : "-light"}.svg` : fallback
 
-    color: Looks.colors.fg
+    IconImage {
+        id: iconImage
+        anchors.fill: parent
+        source: root.iconSource
+        implicitSize: root.implicitSize
+        visible: !root.isMask
+    }
+
+    ColorOverlay {
+        anchors.fill: iconImage
+        source: iconImage
+        color: Looks.colors.fg
+        visible: root.isMask
+    }
 }

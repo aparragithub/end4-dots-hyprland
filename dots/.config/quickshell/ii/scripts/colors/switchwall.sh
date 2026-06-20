@@ -12,28 +12,6 @@ SHELL_CONFIG_FILE="$XDG_CONFIG_HOME/illogical-impulse/config.json"
 MATUGEN_DIR="$XDG_CONFIG_HOME/matugen"
 terminalscheme="$SCRIPT_DIR/terminal/scheme-base.json"
 
-handle_kde_material_you_colors() {
-    # Check if Qt app theming is enabled in config
-    if [ -f "$SHELL_CONFIG_FILE" ]; then
-        enable_qt_apps=$(jq -r '.appearance.wallpaperTheming.enableQtApps' "$SHELL_CONFIG_FILE")
-        if [ "$enable_qt_apps" == "false" ]; then
-            return
-        fi
-    fi
-
-    # Map $type_flag to allowed scheme variants for kde-material-you-colors-wrapper.sh
-    local kde_scheme_variant=""
-    case "$type_flag" in
-        scheme-content|scheme-expressive|scheme-fidelity|scheme-fruit-salad|scheme-monochrome|scheme-neutral|scheme-rainbow|scheme-tonal-spot)
-            kde_scheme_variant="$type_flag"
-            ;;
-        *)
-            kde_scheme_variant="scheme-tonal-spot" # default
-            ;;
-    esac
-    "$XDG_CONFIG_HOME"/matugen/templates/kde/kde-material-you-colors-wrapper.sh --scheme-variant "$kde_scheme_variant"
-}
-
 pre_process() {
     local mode_flag="$1"
     # Set GNOME color-scheme if mode_flag is dark or light
@@ -63,7 +41,6 @@ post_process() {
     local screen_height="$2"
     local wallpaper_path="$3"
 
-    handle_kde_material_you_colors &
     "$SCRIPT_DIR/code/material-code-set-color.sh" &
 }
 
@@ -419,11 +396,7 @@ main() {
     # Only prompt for wallpaper if not using --color and not using --noswitch and no imgpath set
     if [[ -z "$imgpath" && -z "$color_flag" && -z "$noswitch_flag" ]]; then
         cd "$(xdg-user-dir PICTURES)/Wallpapers/showcase" 2>/dev/null || cd "$(xdg-user-dir PICTURES)/Wallpapers" 2>/dev/null || cd "$(xdg-user-dir PICTURES)" || return 1
-        if command -v zenity >/dev/null 2>&1; then
-            imgpath="$(zenity --file-selection --title='Choose wallpaper')"
-        else
-            imgpath="$(kdialog --getopenfilename . --title 'Choose wallpaper')"
-        fi
+        imgpath="$(zenity --file-selection --title='Choose wallpaper')"
     fi
 
     if [[ -n "$imgpath" && -z "$noswitch_flag" ]]; then

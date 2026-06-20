@@ -4,7 +4,6 @@ setuptools-scm
 wheel
 pywayland
 psutil
-kde-material-you-colors
 materialyoucolor
 libsass
 material-color-utilities

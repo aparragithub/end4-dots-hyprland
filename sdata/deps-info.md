@@ -60,10 +60,10 @@ Tips:
   - [source](https://github.com/lassekongo83/adw-gtk3)
   - Used in Quickshell config.
 - `breeze`
-  - Used in kdeglobals config.
+  - Cursor and icon theme option.
 - `breeze-plus`
   - [source](https://github.com/mjkim0727/breeze-plus)
-  - Used in kde-material-you-colors config.
+  - Icon theme option.
 - `darkly-bin`
   - `darkly` is supposed to be set as the theme for Qt apps, just have not figured out how to properly set it yet.
 - `eza`
@@ -73,7 +73,7 @@ Tips:
 - `fontconfig`
   - Basic component which is nearly a must.
 - `kitty`
-  - Used in fuzzel, Hyprland, kdeglobals and Quickshell config; kitty config is also included as dots.
+  - Used in fuzzel, Hyprland and Quickshell config; kitty config is also included as dots.
 - `matugen-bin`
   - Used in Quickshell.
 - `mkos-big-sur-icon-theme`
@@ -95,7 +95,7 @@ Tips:
   - Icon theme option.
 - `ttf-jetbrains-mono-nerd`
   - Font name: `JetBrains Mono NF`, `JetBrainsMono Nerd Font`.
-  - Used in foot, kdeglobals, kitty, qt5ct, qt6ct and Quickshell config.
+  - Used in foot, kitty, qt5ct, qt6ct and Quickshell config.
 - `ttf-material-symbols-variable-git`
   - Font name: `Material Symbols Rounded`, `Material Symbols Outlined`
   - Used in Hyprland, matugen, Quickshell and wlogout config.
@@ -104,7 +104,7 @@ Tips:
   - Used in Quickshell config.
 - `ttf-rubik-vf`
   - Font name: `Rubik`, `Rubik Light`
-  - Used in Hyprland, kdeglobals, matugen, qt5ct, qt6ct and Quickshell config.
+  - Used in Hyprland, matugen, qt5ct, qt6ct and Quickshell config.
 - `ttf-twemoji`
   - Not explicitly used, but it may help as fallback for displaying emoji characters.
 
@@ -250,8 +250,6 @@ Extra dependencies.
 - `qt6-translations`
 - `qt6-virtualkeyboard`
 - `qt6-wayland`
-- `kirigami`
-- `kdialog`
 - `syntax-highlighting`
 - `vulkan-headers`
 - `libdrm`

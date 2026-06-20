@@ -14,7 +14,8 @@ Scope {
     PanelWindow {
         id: root
         visible: (Notifications.popupList.length > 0) && !GlobalStates.screenLocked
-        screen: Quickshell.screens.find(s => Config.options.notifications.forceMonitor.enable ? s.name === Config.options.notifications.forceMonitor.name : s.name === Hyprland.focusedMonitor?.name) ?? null
+        readonly property var monitorConfig: Config.options.notifications.forceMonitor ?? Config.options.notifications.monitor
+        screen: Quickshell.screens.find(s => monitorConfig?.enable ? s.name === monitorConfig.name : s.name === Hyprland.focusedMonitor?.name) ?? null
 
         WlrLayershell.namespace: "quickshell:notificationPopup"
         WlrLayershell.layer: WlrLayer.Overlay
