@@ -18,4 +18,14 @@ depends=(
   # Used in install script
   rsync
   go-yq # https://github.com/mikefarah/yq
+  # Required by the AI Usage sidebar tab: ccusage runs via `npx ccusage@latest`
+  # to report Claude Code spend (tokens × price). nodejs/npm provide the npx
+  # runtime. The AUR package `ccusage` (maintainer: ggilestro, v20.0.14-1, not
+  # out-of-date as of 2026-06-20) can also be declared here as an alternative to
+  # the on-demand npx fetch; however, since it is an AUR package (not official
+  # repos) and PKGBUILD depends must be pacman-resolvable, we rely on npx and
+  # declare only the Node runtime. Install ccusage from AUR for offline use:
+  #   yay -S ccusage
+  nodejs
+  npm
 )
