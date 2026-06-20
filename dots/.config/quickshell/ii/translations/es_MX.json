@@ -760,5 +760,6 @@
   "tokens": "tokens",
   "This week": "Esta semana",
   "This month": "Este mes",
-  "now": "ahora"
+  "now": "ahora",
+  "Estimated cost (API rate)": "Costo estimado (tarifa API)"
 }

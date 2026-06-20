@@ -362,7 +362,7 @@ Item {
                                 font.pixelSize: Appearance.font.pixelSize.small
                                 font.weight: Font.Medium
                                 color: Appearance.colors.colOnLayer1
-                                text: Translation.tr("Spend")
+                                text: Translation.tr("Estimated cost (API rate)")
                             }
 
                             GridLayout {
