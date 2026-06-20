@@ -121,6 +121,29 @@ reboot only helps because time passes — the real cause is two PAM settings:
 > driver/hardware-detection runs. If it comes back, address it at the `chwd`
 > level. Alternative fix: actually enroll a fingerprint with `fprintd-enroll`.
 
+### Monitor layout (laptop only)
+
+The laptop uses its built-in panel (`eDP-1`) plus an external HDMI monitor
+(`HDMI-A-1`) that sits physically to the **left**. Hyprland's generic rule
+(`hyprland/general.lua`: `output="", position="auto"`) placed them inverted.
+
+Hyprland's lua config loads `~/.config/hypr/monitors.lua` if it exists (the
+nwg-displays hook), and per-output rules there override the generic one. Create
+it **only on the laptop**:
+
+```lua
+-- ~/.config/hypr/monitors.lua
+hl.monitor({ output = "HDMI-A-1", mode = "preferred", position = "0x0",    scale = 1 })
+hl.monitor({ output = "eDP-1",    mode = "preferred", position = "1920x0", scale = 1 })
+```
+
+`HDMI-A-1` at `0x0` (left), `eDP-1` at `1920x0` (right of the 1920-wide HDMI).
+Apply with `hyprctl reload`.
+
+> The other PC has **no** `monitors.lua`, so it keeps the generic `auto` rule
+> and its single monitor works untouched. This file is machine-local, like
+> `config.json` — not tracked in the repo.
+
 ---
 
 ## 3. Intel iGPU monitoring (Intel machines only)
