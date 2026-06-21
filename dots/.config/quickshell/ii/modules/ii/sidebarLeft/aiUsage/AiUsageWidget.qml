@@ -57,11 +57,13 @@ Item {
         return "$" + Math.ceil(v);
     }
 
-    // ── Helper: format token count (no decimals, rounded up) ─────────────────
+    // ── Helper: format token count with 1 decimal place ──────────────────────
+    // Uses toFixed(1) + parseFloat to avoid the Math.ceil over-rounding bug
+    // where e.g. 1,100,000 tokens would display as "2M" instead of "1.1M".
     function formatTokens(n) {
         if (typeof n !== "number" || isNaN(n)) return "0";
-        if (n >= 1_000_000) return Math.ceil(n / 1_000_000) + "M";
-        if (n >= 1_000)     return Math.ceil(n / 1_000) + "k";
+        if (n >= 1_000_000) return parseFloat((n / 1_000_000).toFixed(1)) + "M";
+        if (n >= 1_000)     return parseFloat((n / 1_000).toFixed(1)) + "k";
         return String(n);
     }
 
@@ -1180,7 +1182,9 @@ Item {
                                                         font.pixelSize: Appearance.font.pixelSize.small
                                                         font.weight: Font.Medium
                                                         color: Appearance.colors.colOnLayer1
-                                                        text: Math.round(modelData.usedPercent) + "%"
+                                                        text: (modelData.usedPercent > 0 && modelData.usedPercent < 0.5) 
+                                                                ? "<1%" 
+                                                                : Math.round(modelData.usedPercent) + "%"
                                                     }
                                                 }
                                             }
