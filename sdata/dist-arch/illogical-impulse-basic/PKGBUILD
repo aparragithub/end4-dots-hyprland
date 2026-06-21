@@ -36,4 +36,7 @@ depends=(
   # aggregation from ~/.codex/sessions rollout files). They are already listed
   # above but noted here for traceability. OpenAiUsage.qml uses `find`
   # (coreutils) for rollout discovery — NOT fd — so no new dep is added there.
+  # Required by OpenCodeUsage.qml: sqlite3 CLI reads the OpenCode spend DB at
+  # ~/.local/share/opencode/opencode.db. The `sqlite` package provides sqlite3.
+  sqlite
 )

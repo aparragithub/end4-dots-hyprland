@@ -513,6 +513,9 @@ Singleton {
                         property JsonObject antigravity: JsonObject {
                             property bool enable: false
                         }
+                        property JsonObject opencode: JsonObject {
+                            property bool enable: false
+                        }
                     }
                 }
                 property JsonObject translator: JsonObject {
