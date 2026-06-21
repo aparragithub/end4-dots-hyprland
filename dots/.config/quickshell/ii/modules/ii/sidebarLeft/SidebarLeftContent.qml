@@ -20,6 +20,7 @@ Item {
     property bool aiUsageEnabled: Config.options.sidebar.aiUsage.providers.claude.enable
                                 || Config.options.sidebar.aiUsage.providers.openai.enable
                                 || Config.options.sidebar.aiUsage.providers.antigravity.enable
+                                || Config.options.sidebar.aiUsage.providers.opencode.enable
     property var tabButtonList: [
         ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
         ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),

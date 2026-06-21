@@ -276,6 +276,18 @@ ContentPage {
                 text: Translation.tr("Quota-only. Reads OS keyring at runtime; requires secret-tool/libsecret + signed-in agy.\nNo token counts or cost (not available from Antigravity API).")
             }
         }
+
+        ConfigSwitch {
+            buttonIcon: "code_blocks"
+            text: Translation.tr("OpenCode")
+            checked: Config.options.sidebar.aiUsage.providers.opencode.enable
+            onCheckedChanged: {
+                Config.options.sidebar.aiUsage.providers.opencode.enable = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Reads ~/.local/share/opencode/opencode.db locally, no network.\nShows real per-token cost (not estimated) broken down by provider.")
+            }
+        }
     }
 
     ContentSection {
