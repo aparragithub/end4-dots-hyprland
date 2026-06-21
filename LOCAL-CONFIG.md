@@ -144,6 +144,37 @@ Apply with `hyprctl reload`.
 > and its single monitor works untouched. This file is machine-local, like
 > `config.json` — not tracked in the repo.
 
+To make the external HDMI monitor the primary workspace target on the laptop,
+also create `~/.config/hypr/workspaces.lua` **only on the laptop**:
+
+```lua
+-- ~/.config/hypr/workspaces.lua
+local external_monitor = "HDMI-A-1"
+local laptop_panel = "eDP-1"
+local has_external_monitor = hl.get_monitor(external_monitor) ~= nil
+
+hl.workspace_rule({
+    workspace = "1",
+    monitor = has_external_monitor and external_monitor or laptop_panel,
+    default = true,
+    persistent = true
+})
+
+if has_external_monitor then
+    hl.workspace_rule({
+        workspace = "2",
+        monitor = laptop_panel,
+        default = true,
+        persistent = true
+    })
+end
+```
+
+When `HDMI-A-1` is connected, workspace 1 is created there and the laptop panel
+gets workspace 2 as its default. When the laptop is used alone, workspace 1
+falls back to `eDP-1`. The other PC should keep this file absent so it continues
+to use Hyprland's generic single-monitor behavior.
+
 ---
 
 ## 3. Intel iGPU monitoring (Intel machines only)
