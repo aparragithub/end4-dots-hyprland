@@ -16,8 +16,10 @@ import qs.modules.common
  *                Token read from ~/.claude/.credentials.json (kept fresh by
  *                Claude Code). Logic adapted from upstream PR end-4/dots-hyprland#3468.
  *
- * Spend source:  npx ccusage@latest --json (reads local session logs; handles
- *                pricing). Requires Node runtime.
+ * Spend source:  ccusage --json — prefers an installed ccusage binary and
+ *                falls back to `npx --yes ccusage` (no @latest, to avoid a
+ *                network version check). Reads local session logs; needs Node
+ *                for the npx fallback.
  *
  * Polling:       Visibility-gated — only while tabVisible is true and at least
  *                one provider is enabled. fetchInterval minutes between cycles;
@@ -48,6 +50,9 @@ Singleton {
     // ── Claude: spend (ccusage) ──────────────────────────────────────────────
     property bool spentAvailable: false
     property string spentError: ""
+    // Point 2B: cache last raw ccusage payload so ModelPricing updates can
+    // re-run _refineSpend without re-launching the subprocess.
+    property var _lastSpendData: null
 
     property real spentTodayCost: 0
     property real spentWeekCost: 0
@@ -126,7 +131,11 @@ Singleton {
         // Adapted verbatim from end-4/dots-hyprland PR #3468 ClaudeUsage.qml.
         command: [
             "bash", "-c",
+            // Point 4: guard credentials file existence before running jq
             "creds=\"$HOME/.claude/.credentials.json\"; " +
+            "if [ ! -f \"$creds\" ]; then " +
+            "  echo '{\"error\":\"credentials file missing\"}'; exit 0; " +
+            "fi; " +
             "tok=$(jq -r '.claudeAiOauth.accessToken' \"$creds\" 2>/dev/null); " +
             "sub=$(jq -r '.claudeAiOauth.subscriptionType' \"$creds\" 2>/dev/null); " +
             "if [ -z \"$tok\" ] || [ \"$tok\" = null ]; then " +
@@ -282,7 +291,10 @@ Singleton {
         // `timeout 60` guards against a hung npx (e.g. network stall on first
         // download) leaving spentLoading stuck forever. timeout exits 124 on
         // expiry, which the onExited non-zero path handles.
-        command: ["bash", "-c", "timeout 60 npx ccusage@latest --json 2>/dev/null || exit 1"]
+        // Point 2A: try the system-installed binary first (AUR/global npm install),
+        // fall back to npx without @latest so npx does NOT hit the npm registry
+        // on every poll cycle. timeout 60 still guards against a hung process.
+        command: ["bash", "-c", "ccusage --json 2>/dev/null || timeout 60 npx --yes ccusage --json 2>/dev/null || exit 1"]
         stdout: StdioCollector {
             onStreamFinished: {
                 root.spentLoading = false;
@@ -294,6 +306,7 @@ Singleton {
                 }
                 try {
                     const d = JSON.parse(raw);
+                    root._lastSpendData = d;   // Point 2B: cache for pricing updates
                     root._refineSpend(d);
                 } catch (e) {
                     root.spentAvailable = false;
@@ -313,10 +326,17 @@ Singleton {
 
     // Re-compute spend costs when ModelPricing finishes loading so costs
     // update even if pricing data arrived after the first ccusage fetch.
+    // Point 2B: use the cached payload instead of re-launching the subprocess.
     Connections {
         target: ModelPricing
         function onReadyChanged() {
-            if (ModelPricing.ready) root._fetchSpend();
+            if (ModelPricing.ready && root._lastSpendData) {
+                root._refineSpend(root._lastSpendData);
+            } else if (ModelPricing.ready) {
+                // No cached data yet — pricing loaded before the first fetch;
+                // fall back to a full fetch so the widget is not stuck empty.
+                root._fetchSpend();
+            }
         }
     }
 
