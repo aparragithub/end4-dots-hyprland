@@ -28,4 +28,12 @@ depends=(
   #   yay -S ccusage
   nodejs
   npm
+  # Required by AntigravityUsage.qml: secret-tool reads the Antigravity bearer
+  # token from the OS keyring at runtime. libsecret provides the secret-tool
+  # binary. Without it the Antigravity section shows a "install libsecret" hint.
+  libsecret
+  # curl and jq are reused by OpenAiUsage.qml (Codex quota fetch + token
+  # aggregation from ~/.codex/sessions rollout files). They are already listed
+  # above but noted here for traceability. OpenAiUsage.qml uses `find`
+  # (coreutils) for rollout discovery — NOT fd — so no new dep is added there.
 )

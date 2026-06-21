@@ -507,6 +507,12 @@ Singleton {
                         property JsonObject claude: JsonObject {
                             property bool enable: false
                         }
+                        property JsonObject openai: JsonObject {
+                            property bool enable: false
+                        }
+                        property JsonObject antigravity: JsonObject {
+                            property bool enable: false
+                        }
                     }
                 }
                 property JsonObject translator: JsonObject {

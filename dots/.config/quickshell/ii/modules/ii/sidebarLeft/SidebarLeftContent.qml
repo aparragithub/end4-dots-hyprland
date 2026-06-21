@@ -18,6 +18,8 @@ Item {
     property bool animeEnabled: Config.options.policies.weeb !== 0
     property bool animeCloset: Config.options.policies.weeb === 2
     property bool aiUsageEnabled: Config.options.sidebar.aiUsage.providers.claude.enable
+                                || Config.options.sidebar.aiUsage.providers.openai.enable
+                                || Config.options.sidebar.aiUsage.providers.antigravity.enable
     property var tabButtonList: [
         ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
         ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),

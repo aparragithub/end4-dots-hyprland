@@ -252,6 +252,30 @@ ContentPage {
                 text: Translation.tr("Shows Claude quota (5h/7d) and spend.\nRequires ~/.claude/.credentials.json (created by Claude Code).")
             }
         }
+
+        ConfigSwitch {
+            buttonIcon: "terminal"
+            text: Translation.tr("Codex (OpenAI)")
+            checked: Config.options.sidebar.aiUsage.providers.openai.enable
+            onCheckedChanged: {
+                Config.options.sidebar.aiUsage.providers.openai.enable = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Reads ~/.codex/sessions locally, no network.\nShows 5h/7d quota gauges and estimated API-rate cost.")
+            }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "auto_awesome_motion"
+            text: Translation.tr("Antigravity (agy)")
+            checked: Config.options.sidebar.aiUsage.providers.antigravity.enable
+            onCheckedChanged: {
+                Config.options.sidebar.aiUsage.providers.antigravity.enable = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Quota-only. Reads OS keyring at runtime; requires secret-tool/libsecret + signed-in agy.\nNo token counts or cost (not available from Antigravity API).")
+            }
+        }
     }
 
     ContentSection {
