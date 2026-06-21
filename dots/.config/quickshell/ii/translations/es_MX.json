@@ -761,5 +761,7 @@
   "This week": "Esta semana",
   "This month": "Este mes",
   "now": "ahora",
-  "Estimated cost (API rate)": "Costo estimado (tarifa API)"
+  "Estimated cost (API rate)": "Costo estimado (tarifa API)",
+  "Estimated API-rate cost": "Costo estimado (tarifa API)",
+  "Usage unavailable": "Uso no disponible"
 }
