@@ -10,12 +10,12 @@ import qs.modules.common
  * OpenCode usage service — real per-token spend, multi-provider.
  *
  * Data source: SQLite DB at ~/.local/share/opencode/opencode.db (WAL mode).
- * Table: session — columns: cost (REAL, USD), tokens_input, tokens_output,
- * tokens_reasoning, tokens_cache_read, tokens_cache_write,
- * model (TEXT, JSON like {"id":"...","providerID":"anthropic"}),
- * time_created (epoch MILLISECONDS).
+ * Table: message — column data (TEXT, JSON per message). Assistant messages
+ * carry the spend at top level: modelID, providerID, cost (USD), and
+ * tokens.total. time_created is epoch MILLISECONDS.
  *
- * Provider = json_extract(model,'$.providerID').
+ * We group by MODEL (json_extract(data,'$.modelID')) so distinct models like
+ * deepseek, gpt, kimi show as separate rows, with their providerID alongside.
  * Aggregation: three grouped queries (today / week / month) emitted as a
  * single JSON object by one sqlite3 invocation.
  *
@@ -38,7 +38,7 @@ Singleton {
     property bool available: false
     property string error: ""
 
-    // Per-period arrays: each element is { provider, cost, tokens }
+    // Per-period arrays: each element is { model, provider, cost, tokens }
     property var todayRows: []
     property var weekRows: []
     property var monthRows: []
@@ -118,9 +118,10 @@ Singleton {
             "t0=$(date -d 'today 00:00' +%s 2>/dev/null || date -v0H -v0M -v0S +%s)000; " +
             "w0=$(date -d '7 days ago 00:00' +%s 2>/dev/null || date -v-7d -v0H -v0M -v0S +%s)000; " +
             "m0=$(date -d 'this month 00:00' +%s 2>/dev/null || date -v1d -v0H -v0M -v0S +%s)000; " +
-            "q_today=\"SELECT json_extract(model,'$.providerID') AS provider, ROUND(SUM(cost),6) AS cost, CAST(SUM(tokens_input+tokens_output+tokens_reasoning) AS INTEGER) AS tokens FROM session WHERE model IS NOT NULL AND time_created >= $t0 GROUP BY provider ORDER BY cost DESC\"; " +
-            "q_week=\"SELECT json_extract(model,'$.providerID') AS provider, ROUND(SUM(cost),6) AS cost, CAST(SUM(tokens_input+tokens_output+tokens_reasoning) AS INTEGER) AS tokens FROM session WHERE model IS NOT NULL AND time_created >= $w0 GROUP BY provider ORDER BY cost DESC\"; " +
-            "q_month=\"SELECT json_extract(model,'$.providerID') AS provider, ROUND(SUM(cost),6) AS cost, CAST(SUM(tokens_input+tokens_output+tokens_reasoning) AS INTEGER) AS tokens FROM session WHERE model IS NOT NULL AND time_created >= $m0 GROUP BY provider ORDER BY cost DESC\"; " +
+            "sel=\"SELECT json_extract(data,'$.modelID') AS model, json_extract(data,'$.providerID') AS provider, ROUND(SUM(COALESCE(json_extract(data,'$.cost'),0)),6) AS cost, CAST(SUM(COALESCE(json_extract(data,'$.tokens.total'),0)) AS INTEGER) AS tokens FROM message WHERE json_extract(data,'$.modelID') IS NOT NULL\"; " +
+            "q_today=\"$sel AND time_created >= $t0 GROUP BY provider, model ORDER BY cost DESC\"; " +
+            "q_week=\"$sel AND time_created >= $w0 GROUP BY provider, model ORDER BY cost DESC\"; " +
+            "q_month=\"$sel AND time_created >= $m0 GROUP BY provider, model ORDER BY cost DESC\"; " +
             "today_json=$(sqlite3 -json \"file:${db}?mode=ro\" \"$q_today\" 2>/dev/null); today_json=${today_json:-[]}; " +
             "week_json=$(sqlite3  -json \"file:${db}?mode=ro\" \"$q_week\"  2>/dev/null); week_json=${week_json:-[]}; " +
             "month_json=$(sqlite3 -json \"file:${db}?mode=ro\" \"$q_month\" 2>/dev/null); month_json=${month_json:-[]}; " +

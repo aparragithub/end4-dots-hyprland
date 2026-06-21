@@ -1013,7 +1013,8 @@ Item {
                                         Layout.fillWidth: true
                                         font.pixelSize: Appearance.font.pixelSize.small
                                         color: Appearance.colors.colSubtext
-                                        text: modelData.provider ?? "unknown"
+                                        text: (modelData.model ?? "unknown")
+                                              + (modelData.provider ? " · " + modelData.provider : "")
                                         elide: Text.ElideRight
                                     }
                                     StyledText {
@@ -1066,7 +1067,8 @@ Item {
                                         Layout.fillWidth: true
                                         font.pixelSize: Appearance.font.pixelSize.small
                                         color: Appearance.colors.colSubtext
-                                        text: modelData.provider ?? "unknown"
+                                        text: (modelData.model ?? "unknown")
+                                              + (modelData.provider ? " · " + modelData.provider : "")
                                         elide: Text.ElideRight
                                     }
                                     StyledText {
@@ -1119,7 +1121,8 @@ Item {
                                         Layout.fillWidth: true
                                         font.pixelSize: Appearance.font.pixelSize.small
                                         color: Appearance.colors.colSubtext
-                                        text: modelData.provider ?? "unknown"
+                                        text: (modelData.model ?? "unknown")
+                                              + (modelData.provider ? " · " + modelData.provider : "")
                                         elide: Text.ElideRight
                                     }
                                     StyledText {
