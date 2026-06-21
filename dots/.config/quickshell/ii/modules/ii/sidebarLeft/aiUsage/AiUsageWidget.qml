@@ -410,8 +410,9 @@ Item {
                                     Layout.alignment: Qt.AlignRight
                                     font.pixelSize: Appearance.font.pixelSize.small
                                     color: Appearance.colors.colSubtext
-                                    text: root.formatTokens(AiUsage.spentTodayTokens)
-                                           + " " + Translation.tr("tokens")
+                                    text: root.formatTokens(AiUsage.spentTodayInputTokens) + " in · "
+                                        + root.formatTokens(AiUsage.spentTodayOutputTokens) + " out · "
+                                        + root.formatTokens(AiUsage.spentTodayCacheTokens) + " cache"
                                 }
 
                                 // ── This week ─────────────────────────────────
@@ -443,6 +444,327 @@ Item {
                                     text: root.formatCost(AiUsage.spentMonthCost)
                                 }
                                 StyledText { text: "" }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── OpenCode card ────────────────────────────────────────────────
+            Rectangle {
+                id: opencodeCard
+                visible: Config.options.sidebar.aiUsage.providers.opencode.enable
+                Layout.fillWidth: true
+                Layout.leftMargin: 12
+                Layout.rightMargin: 12
+                radius: Appearance.rounding.normal
+                color: Appearance.colors.colLayer2
+                implicitHeight: visible ? opencodeCardColumn.implicitHeight + 24 : 0
+
+                property bool dataOk: OpenCodeUsage.available && !OpenCodeUsage.error
+
+                ColumnLayout {
+                    id: opencodeCardColumn
+                    anchors {
+                        left: parent.left; right: parent.right
+                        top: parent.top
+                        margins: 12
+                    }
+                    spacing: 10
+
+                    // ── Card header ──────────────────────────────────────────
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        MaterialSymbol {
+                            text: "code_blocks"
+                            iconSize: Appearance.font.pixelSize.larger
+                            color: Appearance.colors.colPrimary
+                        }
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            font.pixelSize: Appearance.font.pixelSize.large
+                            font.weight: Font.Medium
+                            color: Appearance.colors.colOnLayer1
+                            text: "OpenCode"
+                        }
+
+                        MouseArea {
+                            id: opencodeRefreshArea
+                            implicitWidth: 28
+                            implicitHeight: 28
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: OpenCodeUsage.refresh()
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: Appearance.rounding.small
+                                color: opencodeRefreshArea.containsMouse
+                                    ? Appearance.colors.colLayer3
+                                    : "transparent"
+                            }
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                text: "refresh"
+                                iconSize: Appearance.font.pixelSize.larger
+                                color: Appearance.colors.colOnLayer1
+                            }
+                        }
+                    }
+
+                    // ── Loading state ────────────────────────────────────────
+                    StyledText {
+                        visible: OpenCodeUsage.usageLoading && !OpenCodeUsage.available
+                        Layout.alignment: Qt.AlignHCenter
+                        color: Appearance.colors.colSubtext
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        text: Translation.tr("Loading…")
+                    }
+
+                    // ── Error / unavailable state ────────────────────────────
+                    StyledText {
+                        visible: !OpenCodeUsage.usageLoading && !OpenCodeUsage.available
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        color: Appearance.colors.colSubtext
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        text: OpenCodeUsage.error.length > 0
+                            ? OpenCodeUsage.error
+                            : Translation.tr("Usage unavailable")
+                    }
+
+                    // ── Spend section ────────────────────────────────────────
+                    // Cost shown as estimated API-rate cost via models.dev pricing.
+                    ColumnLayout {
+                        visible: opencodeCard.dataOk
+                        Layout.fillWidth: true
+                        spacing: 6
+
+                        StyledText {
+                            font.pixelSize: Appearance.font.pixelSize.small
+                            font.weight: Font.Medium
+                            color: Appearance.colors.colOnLayer1
+                            text: Translation.tr("Estimated API-rate cost")
+                        }
+
+                        // Per-provider breakdown by period
+                        // Today block
+                        ColumnLayout {
+                            visible: OpenCodeUsage.todayRows.length > 0
+                            Layout.fillWidth: true
+                            spacing: 2
+
+                            StyledText {
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                font.weight: Font.Medium
+                                color: Appearance.colors.colSubtext
+                                text: Translation.tr("Today")
+                            }
+
+                            Repeater {
+                                model: OpenCodeUsage.todayRows
+                                delegate: ColumnLayout {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    spacing: 1
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 8
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            font.pixelSize: Appearance.font.pixelSize.small
+                                            color: Appearance.colors.colSubtext
+                                            text: (modelData.model ?? "unknown")
+                                                  + (modelData.provider ? " · " + modelData.provider : "")
+                                            elide: Text.ElideRight
+                                        }
+                                        StyledText {
+                                            Layout.alignment: Qt.AlignRight
+                                            font.pixelSize: Appearance.font.pixelSize.small
+                                            color: Appearance.colors.colOnLayer1
+                                            text: modelData.estimatedCost != null
+                                                ? root.formatCost(modelData.estimatedCost)
+                                                : "—"
+                                        }
+                                        StyledText {
+                                            Layout.alignment: Qt.AlignRight
+                                            font.pixelSize: Appearance.font.pixelSize.small
+                                            color: Appearance.colors.colSubtext
+                                            text: root.formatTokens(modelData.tokens ?? 0)
+                                                   + " " + Translation.tr("tokens")
+                                        }
+                                    }
+                                    RowLayout {
+                                        visible: (modelData.tok_input !== undefined) || (modelData.tok_output !== undefined)
+                                        Layout.fillWidth: true
+                                        spacing: 4
+
+                                        Item { Layout.fillWidth: true }
+                                        StyledText {
+                                            font.pixelSize: Appearance.font.pixelSize.smaller
+                                            color: Appearance.colors.colSubtext
+                                            text: root.formatTokens(modelData.tok_input ?? 0) + " in · "
+                                                + root.formatTokens((modelData.tok_output ?? 0) + (modelData.tok_reasoning ?? 0)) + " out · "
+                                                + root.formatTokens((modelData.tok_cache_read ?? 0) + (modelData.tok_cache_write ?? 0)) + " cache"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Divider between today and week when both visible
+                        Rectangle {
+                            visible: OpenCodeUsage.todayRows.length > 0
+                                  && OpenCodeUsage.weekRows.length > 0
+                            Layout.fillWidth: true
+                            height: 1
+                            color: Appearance.colors.colLayer3
+                        }
+
+                        // Week block
+                        ColumnLayout {
+                            visible: OpenCodeUsage.weekRows.length > 0
+                            Layout.fillWidth: true
+                            spacing: 2
+
+                            StyledText {
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                font.weight: Font.Medium
+                                color: Appearance.colors.colSubtext
+                                text: Translation.tr("This week")
+                            }
+
+                            Repeater {
+                                model: OpenCodeUsage.weekRows
+                                delegate: ColumnLayout {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    spacing: 1
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 8
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            font.pixelSize: Appearance.font.pixelSize.small
+                                            color: Appearance.colors.colSubtext
+                                            text: (modelData.model ?? "unknown")
+                                                  + (modelData.provider ? " · " + modelData.provider : "")
+                                            elide: Text.ElideRight
+                                        }
+                                        StyledText {
+                                            Layout.alignment: Qt.AlignRight
+                                            font.pixelSize: Appearance.font.pixelSize.small
+                                            color: Appearance.colors.colOnLayer1
+                                            text: modelData.estimatedCost != null
+                                                ? root.formatCost(modelData.estimatedCost)
+                                                : "—"
+                                        }
+                                        StyledText {
+                                            Layout.alignment: Qt.AlignRight
+                                            font.pixelSize: Appearance.font.pixelSize.small
+                                            color: Appearance.colors.colSubtext
+                                            text: root.formatTokens(modelData.tokens ?? 0)
+                                                   + " " + Translation.tr("tokens")
+                                        }
+                                    }
+                                    RowLayout {
+                                        visible: (modelData.tok_input !== undefined) || (modelData.tok_output !== undefined)
+                                        Layout.fillWidth: true
+                                        spacing: 4
+
+                                        Item { Layout.fillWidth: true }
+                                        StyledText {
+                                            font.pixelSize: Appearance.font.pixelSize.smaller
+                                            color: Appearance.colors.colSubtext
+                                            text: root.formatTokens(modelData.tok_input ?? 0) + " in · "
+                                                + root.formatTokens((modelData.tok_output ?? 0) + (modelData.tok_reasoning ?? 0)) + " out · "
+                                                + root.formatTokens((modelData.tok_cache_read ?? 0) + (modelData.tok_cache_write ?? 0)) + " cache"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Divider between week and month when both visible
+                        Rectangle {
+                            visible: OpenCodeUsage.weekRows.length > 0
+                                  && OpenCodeUsage.monthRows.length > 0
+                            Layout.fillWidth: true
+                            height: 1
+                            color: Appearance.colors.colLayer3
+                        }
+
+                        // Month block
+                        ColumnLayout {
+                            visible: OpenCodeUsage.monthRows.length > 0
+                            Layout.fillWidth: true
+                            spacing: 2
+
+                            StyledText {
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                font.weight: Font.Medium
+                                color: Appearance.colors.colSubtext
+                                text: Translation.tr("This month")
+                            }
+
+                            Repeater {
+                                model: OpenCodeUsage.monthRows
+                                delegate: ColumnLayout {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    spacing: 1
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 8
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            font.pixelSize: Appearance.font.pixelSize.small
+                                            color: Appearance.colors.colSubtext
+                                            text: (modelData.model ?? "unknown")
+                                                  + (modelData.provider ? " · " + modelData.provider : "")
+                                            elide: Text.ElideRight
+                                        }
+                                        StyledText {
+                                            Layout.alignment: Qt.AlignRight
+                                            font.pixelSize: Appearance.font.pixelSize.small
+                                            color: Appearance.colors.colOnLayer1
+                                            text: modelData.estimatedCost != null
+                                                ? root.formatCost(modelData.estimatedCost)
+                                                : "—"
+                                        }
+                                        StyledText {
+                                            Layout.alignment: Qt.AlignRight
+                                            font.pixelSize: Appearance.font.pixelSize.small
+                                            color: Appearance.colors.colSubtext
+                                            text: root.formatTokens(modelData.tokens ?? 0)
+                                                   + " " + Translation.tr("tokens")
+                                        }
+                                    }
+                                    RowLayout {
+                                        visible: (modelData.tok_input !== undefined) || (modelData.tok_output !== undefined)
+                                        Layout.fillWidth: true
+                                        spacing: 4
+
+                                        Item { Layout.fillWidth: true }
+                                        StyledText {
+                                            font.pixelSize: Appearance.font.pixelSize.smaller
+                                            color: Appearance.colors.colSubtext
+                                            text: root.formatTokens(modelData.tok_input ?? 0) + " in · "
+                                                + root.formatTokens((modelData.tok_output ?? 0) + (modelData.tok_reasoning ?? 0)) + " out · "
+                                                + root.formatTokens((modelData.tok_cache_read ?? 0) + (modelData.tok_cache_write ?? 0)) + " cache"
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -683,8 +1005,9 @@ Item {
                                 Layout.alignment: Qt.AlignRight
                                 font.pixelSize: Appearance.font.pixelSize.small
                                 color: Appearance.colors.colSubtext
-                                text: root.formatTokens(OpenAiUsage.spentTodayTokens)
-                                       + " " + Translation.tr("tokens")
+                                text: root.formatTokens(OpenAiUsage.spentTodayInputTokens) + " in · "
+                                    + root.formatTokens(OpenAiUsage.spentTodayOutputTokens) + " out · "
+                                    + root.formatTokens(OpenAiUsage.spentTodayCacheTokens) + " cache"
                             }
 
                             // This week
@@ -879,264 +1202,6 @@ Item {
                                                     : "—"
                                             }
                                         }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ── OpenCode card ────────────────────────────────────────────────
-            Rectangle {
-                id: opencodeCard
-                visible: Config.options.sidebar.aiUsage.providers.opencode.enable
-                Layout.fillWidth: true
-                Layout.leftMargin: 12
-                Layout.rightMargin: 12
-                radius: Appearance.rounding.normal
-                color: Appearance.colors.colLayer2
-                implicitHeight: visible ? opencodeCardColumn.implicitHeight + 24 : 0
-
-                property bool dataOk: OpenCodeUsage.available && !OpenCodeUsage.error
-
-                ColumnLayout {
-                    id: opencodeCardColumn
-                    anchors {
-                        left: parent.left; right: parent.right
-                        top: parent.top
-                        margins: 12
-                    }
-                    spacing: 10
-
-                    // ── Card header ──────────────────────────────────────────
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 8
-
-                        MaterialSymbol {
-                            text: "code_blocks"
-                            iconSize: Appearance.font.pixelSize.larger
-                            color: Appearance.colors.colPrimary
-                        }
-
-                        StyledText {
-                            Layout.fillWidth: true
-                            font.pixelSize: Appearance.font.pixelSize.large
-                            font.weight: Font.Medium
-                            color: Appearance.colors.colOnLayer1
-                            text: "OpenCode"
-                        }
-
-                        MouseArea {
-                            id: opencodeRefreshArea
-                            implicitWidth: 28
-                            implicitHeight: 28
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: OpenCodeUsage.refresh()
-
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: Appearance.rounding.small
-                                color: opencodeRefreshArea.containsMouse
-                                    ? Appearance.colors.colLayer3
-                                    : "transparent"
-                            }
-
-                            MaterialSymbol {
-                                anchors.centerIn: parent
-                                text: "refresh"
-                                iconSize: Appearance.font.pixelSize.larger
-                                color: Appearance.colors.colOnLayer1
-                            }
-                        }
-                    }
-
-                    // ── Loading state ────────────────────────────────────────
-                    StyledText {
-                        visible: OpenCodeUsage.usageLoading && !OpenCodeUsage.available
-                        Layout.alignment: Qt.AlignHCenter
-                        color: Appearance.colors.colSubtext
-                        font.pixelSize: Appearance.font.pixelSize.small
-                        text: Translation.tr("Loading…")
-                    }
-
-                    // ── Error / unavailable state ────────────────────────────
-                    StyledText {
-                        visible: !OpenCodeUsage.usageLoading && !OpenCodeUsage.available
-                        Layout.fillWidth: true
-                        wrapMode: Text.WordWrap
-                        color: Appearance.colors.colSubtext
-                        font.pixelSize: Appearance.font.pixelSize.small
-                        text: OpenCodeUsage.error.length > 0
-                            ? OpenCodeUsage.error
-                            : Translation.tr("Usage unavailable")
-                    }
-
-                    // ── Spend section ────────────────────────────────────────
-                    // Cost is real billed cost, not estimated — label as "Spent".
-                    ColumnLayout {
-                        visible: opencodeCard.dataOk
-                        Layout.fillWidth: true
-                        spacing: 6
-
-                        StyledText {
-                            font.pixelSize: Appearance.font.pixelSize.small
-                            font.weight: Font.Medium
-                            color: Appearance.colors.colOnLayer1
-                            text: Translation.tr("Spent")
-                        }
-
-                        // Per-provider breakdown by period
-                        // Today block
-                        ColumnLayout {
-                            visible: OpenCodeUsage.todayRows.length > 0
-                            Layout.fillWidth: true
-                            spacing: 2
-
-                            StyledText {
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                font.weight: Font.Medium
-                                color: Appearance.colors.colSubtext
-                                text: Translation.tr("Today")
-                            }
-
-                            Repeater {
-                                model: OpenCodeUsage.todayRows
-                                delegate: RowLayout {
-                                    required property var modelData
-                                    Layout.fillWidth: true
-                                    spacing: 8
-
-                                    StyledText {
-                                        Layout.fillWidth: true
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        color: Appearance.colors.colSubtext
-                                        text: (modelData.model ?? "unknown")
-                                              + (modelData.provider ? " · " + modelData.provider : "")
-                                        elide: Text.ElideRight
-                                    }
-                                    StyledText {
-                                        Layout.alignment: Qt.AlignRight
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        color: Appearance.colors.colOnLayer1
-                                        text: root.formatCost(modelData.cost ?? 0)
-                                    }
-                                    StyledText {
-                                        Layout.alignment: Qt.AlignRight
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        color: Appearance.colors.colSubtext
-                                        text: root.formatTokens(modelData.tokens ?? 0)
-                                               + " " + Translation.tr("tokens")
-                                    }
-                                }
-                            }
-                        }
-
-                        // Divider between today and week when both visible
-                        Rectangle {
-                            visible: OpenCodeUsage.todayRows.length > 0
-                                  && OpenCodeUsage.weekRows.length > 0
-                            Layout.fillWidth: true
-                            height: 1
-                            color: Appearance.colors.colLayer3
-                        }
-
-                        // Week block
-                        ColumnLayout {
-                            visible: OpenCodeUsage.weekRows.length > 0
-                            Layout.fillWidth: true
-                            spacing: 2
-
-                            StyledText {
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                font.weight: Font.Medium
-                                color: Appearance.colors.colSubtext
-                                text: Translation.tr("This week")
-                            }
-
-                            Repeater {
-                                model: OpenCodeUsage.weekRows
-                                delegate: RowLayout {
-                                    required property var modelData
-                                    Layout.fillWidth: true
-                                    spacing: 8
-
-                                    StyledText {
-                                        Layout.fillWidth: true
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        color: Appearance.colors.colSubtext
-                                        text: (modelData.model ?? "unknown")
-                                              + (modelData.provider ? " · " + modelData.provider : "")
-                                        elide: Text.ElideRight
-                                    }
-                                    StyledText {
-                                        Layout.alignment: Qt.AlignRight
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        color: Appearance.colors.colOnLayer1
-                                        text: root.formatCost(modelData.cost ?? 0)
-                                    }
-                                    StyledText {
-                                        Layout.alignment: Qt.AlignRight
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        color: Appearance.colors.colSubtext
-                                        text: root.formatTokens(modelData.tokens ?? 0)
-                                               + " " + Translation.tr("tokens")
-                                    }
-                                }
-                            }
-                        }
-
-                        // Divider between week and month when both visible
-                        Rectangle {
-                            visible: OpenCodeUsage.weekRows.length > 0
-                                  && OpenCodeUsage.monthRows.length > 0
-                            Layout.fillWidth: true
-                            height: 1
-                            color: Appearance.colors.colLayer3
-                        }
-
-                        // Month block
-                        ColumnLayout {
-                            visible: OpenCodeUsage.monthRows.length > 0
-                            Layout.fillWidth: true
-                            spacing: 2
-
-                            StyledText {
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                font.weight: Font.Medium
-                                color: Appearance.colors.colSubtext
-                                text: Translation.tr("This month")
-                            }
-
-                            Repeater {
-                                model: OpenCodeUsage.monthRows
-                                delegate: RowLayout {
-                                    required property var modelData
-                                    Layout.fillWidth: true
-                                    spacing: 8
-
-                                    StyledText {
-                                        Layout.fillWidth: true
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        color: Appearance.colors.colSubtext
-                                        text: (modelData.model ?? "unknown")
-                                              + (modelData.provider ? " · " + modelData.provider : "")
-                                        elide: Text.ElideRight
-                                    }
-                                    StyledText {
-                                        Layout.alignment: Qt.AlignRight
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        color: Appearance.colors.colOnLayer1
-                                        text: root.formatCost(modelData.cost ?? 0)
-                                    }
-                                    StyledText {
-                                        Layout.alignment: Qt.AlignRight
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        color: Appearance.colors.colSubtext
-                                        text: root.formatTokens(modelData.tokens ?? 0)
-                                               + " " + Translation.tr("tokens")
                                     }
                                 }
                             }
