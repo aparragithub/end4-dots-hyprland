@@ -49,10 +49,12 @@ Singleton {
     // Token counts (session-cumulative per-file sums; see aggregation note above)
     property int spentTodayTokens: 0
     property int spentWeekTokens: 0
+    property int spentMonthTokens: 0
 
     // Estimated API-rate cost (USD). Clearly labeled in widget — not a bill.
     property real spentTodayCost: 0
     property real spentWeekCost: 0
+    property real spentMonthCost: 0
 
     // Token split totals for today (input net, output, cache read)
     property int spentTodayInputTokens: 0
@@ -224,24 +226,46 @@ Singleton {
         const now       = new Date();
         const todayStr  = root._ymd(now);
         const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+        const curYear    = now.getFullYear();
+        const curMonth   = now.getMonth();
 
         let weekTokens = 0, weekCost = 0;
+        let monthTokens = 0, monthCost = 0;
 
         for (const row of rows) {
             const d = new Date(`${row.date}T00:00:00`);
             if (isNaN(d.getTime())) continue;
+
+            const modelId    = row.model_id ?? "gpt-5-codex";
+            const totalTok   = row.total_tokens ?? 0;
+            const inputNet   = Math.max(0, (row.input_tokens ?? 0) - (row.cached_input_tokens ?? 0));
+            const outputTotal = (row.output_tokens ?? 0) + (row.reasoning_output_tokens ?? 0);
+            const cacheRead  = row.cached_input_tokens ?? 0;
+
+            const est = ModelPricing.cost("openai", modelId, {
+                input: inputNet,
+                output: outputTotal,
+                cacheRead: cacheRead,
+                cacheWrite: 0
+            });
+            const rowCost = est !== null
+                ? est
+                : (inputNet + cacheRead + outputTotal) * root._fallbackRatePerToken;
+
             if (d >= weekStart) {
-                const tok = row.tok ?? 0;
-                weekTokens += tok;
-                const est = ModelPricing.cost("openai", "gpt-5-codex", {
-                    input: tok, output: 0, cacheRead: 0, cacheWrite: 0
-                });
-                weekCost += est !== null ? est : tok * root._fallbackRatePerToken;
+                weekTokens += totalTok;
+                weekCost   += rowCost;
+            }
+            if (d.getFullYear() === curYear && d.getMonth() === curMonth) {
+                monthTokens += totalTok;
+                monthCost   += rowCost;
             }
         }
 
         root.spentWeekTokens = weekTokens;
         root.spentWeekCost   = weekCost;
+        root.spentMonthTokens = monthTokens;
+        root.spentMonthCost   = monthCost;
     }
 
     Process {
@@ -255,11 +279,9 @@ Singleton {
             "find \"$base\" -type f -name 'rollout-*.jsonl' -printf '%p\\n' 2>/dev/null | " +
             "while read f; do " +
             "  d=$(echo \"$f\" | grep -oE '[0-9]{4}/[0-9]{2}/[0-9]{2}' | head -1 | tr / -); " +
-            "  t=$(grep -F '\"type\":\"token_count\"' \"$f\" | tail -1 | " +
-            "      jq -r '.payload.info.total_token_usage.total_tokens // 0' 2>/dev/null); " +
-            "  [ -n \"$d\" ] && [ -n \"$t\" ] && echo \"$d $t\"; " +
-            "done | " +
-            "jq -Rs '[split(\"\\n\")[] | select(length>0) | split(\" \") | {date:.[0], tok:(.[1]|tonumber)}]'"
+            "  last=$(grep -F '\"type\":\"token_count\"' \"$f\" | tail -1); " +
+            "  [ -n \"$d\" ] && [ -n \"$last\" ] && echo \"$last\" | jq -c --arg date \"$d\" '(.payload.info.total_token_usage // {}) + {date: $date, model_id: (.payload.info.model_id // .payload.model_id // \"gpt-5-codex\")}'; " +
+            "done | jq -s '.'"
         ]
         stdout: StdioCollector {
             onStreamFinished: {

@@ -127,7 +127,7 @@ Item {
                         // Quota gauges row (5h + 7d)
                         RowLayout {
                             visible: AiUsage.claudeAvailable
-                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignHCenter
                             spacing: 20
                             
                             AiQuotaGauge {
@@ -196,7 +196,13 @@ Item {
                                 + root.formatTokens(AiUsage.spentTodayOutputTokens) + " out · "
                                 + root.formatTokens(AiUsage.spentTodayCacheTokens) + " cache"
                             weekCost: AiUsage.spentWeekCost
+                            weekTokensText: root.formatTokens(AiUsage.spentWeekInputTokens) + " in · "
+                                + root.formatTokens(AiUsage.spentWeekOutputTokens) + " out · "
+                                + root.formatTokens(AiUsage.spentWeekCacheTokens) + " cache"
                             monthCost: AiUsage.spentMonthCost
+                            monthTokensText: root.formatTokens(AiUsage.spentMonthInputTokens) + " in · "
+                                + root.formatTokens(AiUsage.spentMonthOutputTokens) + " out · "
+                                + root.formatTokens(AiUsage.spentMonthCacheTokens) + " cache"
                         }
                     }
                 }
@@ -220,6 +226,7 @@ Item {
                     spacing: 8
                     
                     StyledText {
+                        Layout.alignment: Qt.AlignHCenter
                         font.pixelSize: Appearance.font.pixelSize.small
                         font.weight: Font.Medium
                         color: Appearance.colors.colOnLayer1
@@ -279,7 +286,7 @@ Item {
                     
                     // Quota gauges row (5h + 7d)
                     RowLayout {
-                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignHCenter
                         spacing: 20
                         
                         AiQuotaGauge {
@@ -313,6 +320,8 @@ Item {
                             + root.formatTokens(OpenAiUsage.spentTodayCacheTokens) + " cache"
                         weekCost: OpenAiUsage.spentWeekCost
                         weekTokensText: root.formatTokens(OpenAiUsage.spentWeekTokens) + " " + Translation.tr("tokens")
+                        monthCost: OpenAiUsage.spentMonthCost
+                        monthTokensText: root.formatTokens(OpenAiUsage.spentMonthTokens) + " " + Translation.tr("tokens")
                     }
                 }
             }
@@ -343,7 +352,7 @@ Item {
                             spacing: 8
                             
                             StyledText {
-                                Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignHCenter
                                 font.pixelSize: Appearance.font.pixelSize.small
                                 font.weight: Font.Medium
                                 color: Appearance.colors.colOnLayer1
@@ -352,7 +361,7 @@ Item {
                             }
                             
                             RowLayout {
-                                Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignHCenter
                                 spacing: 20
                                 
                                 Repeater {

@@ -69,6 +69,14 @@ Singleton {
     property int spentTodayOutputTokens: 0
     property int spentTodayCacheTokens: 0
 
+    property int spentWeekInputTokens: 0
+    property int spentWeekOutputTokens: 0
+    property int spentWeekCacheTokens: 0
+
+    property int spentMonthInputTokens: 0
+    property int spentMonthOutputTokens: 0
+    property int spentMonthCacheTokens: 0
+
     // ── Loading flags ────────────────────────────────────────────────────────
     // Start true while the provider is enabled so the UI shows "Loading…" until
     // the first fetch resolves, instead of flashing the "unavailable" notice for
@@ -216,6 +224,8 @@ Singleton {
 
         let todayTokens = 0, weekEstCost = 0, monthEstCost = 0, todayEstCost = 0;
         let todayInputTokens = 0, todayOutputTokens = 0, todayCacheTokens = 0;
+        let weekInputTokens = 0, weekOutputTokens = 0, weekCacheTokens = 0;
+        let monthInputTokens = 0, monthOutputTokens = 0, monthCacheTokens = 0;
 
         for (const row of rows) {
             const p = row.period ?? row.date;
@@ -263,8 +273,18 @@ Singleton {
                 todayOutputTokens += rowOutputTok;
                 todayCacheTokens  += rowCacheTok;
             }
-            if (d >= weekStart) weekEstCost += rowEstCost;
-            if (d.getFullYear() === curYear && d.getMonth() === curMonth) monthEstCost += rowEstCost;
+            if (d >= weekStart) {
+                weekEstCost       += rowEstCost;
+                weekInputTokens   += rowInputTok;
+                weekOutputTokens  += rowOutputTok;
+                weekCacheTokens   += rowCacheTok;
+            }
+            if (d.getFullYear() === curYear && d.getMonth() === curMonth) {
+                monthEstCost      += rowEstCost;
+                monthInputTokens  += rowInputTok;
+                monthOutputTokens += rowOutputTok;
+                monthCacheTokens  += rowCacheTok;
+            }
         }
 
         root.spentTodayCost           = todayEstCost;
@@ -277,6 +297,15 @@ Singleton {
         root.spentTodayInputTokens    = todayInputTokens;
         root.spentTodayOutputTokens   = todayOutputTokens;
         root.spentTodayCacheTokens    = todayCacheTokens;
+
+        root.spentWeekInputTokens     = weekInputTokens;
+        root.spentWeekOutputTokens    = weekOutputTokens;
+        root.spentWeekCacheTokens     = weekCacheTokens;
+
+        root.spentMonthInputTokens    = monthInputTokens;
+        root.spentMonthOutputTokens   = monthOutputTokens;
+        root.spentMonthCacheTokens    = monthCacheTokens;
+
         root.spentAvailable           = true;
         root.spentError               = "";
         root.spentLoading             = false;

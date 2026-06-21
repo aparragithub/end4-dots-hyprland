@@ -71,6 +71,63 @@ Singleton {
             }
         }
 
+        // 4. Fuzzy / partial substring search (e.g. for free/mimo suffixes)
+        function normalize(s) {
+            return String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
+        }
+        const normModelId = normalize(modelId);
+        if (normModelId.length >= 6) {
+            let bestMatchCost = null;
+            let bestMatchLength = 0;
+            let bestMatchKey = "";
+            let ambiguous = false;
+
+            function costSignature(c) {
+                return [
+                    c.input ?? "",
+                    c.output ?? "",
+                    c.cache_read ?? "",
+                    c.cache_write ?? ""
+                ].join("|");
+            }
+
+            function considerCandidate(mid, entry) {
+                const normMid = normalize(mid);
+                if (normMid.length < 4) return;
+                if (!normModelId.includes(normMid) && !normMid.includes(normModelId)) return;
+
+                const c = costFrom(entry);
+                if (!c) return;
+
+                const matchLen = Math.min(normMid.length, normModelId.length);
+                if (matchLen > bestMatchLength) {
+                    bestMatchCost = c;
+                    bestMatchLength = matchLen;
+                    bestMatchKey = normMid;
+                    ambiguous = false;
+                    return;
+                }
+
+                if (matchLen === bestMatchLength) {
+                    const sameModel = normMid === bestMatchKey;
+                    const sameCost = bestMatchCost && costSignature(c) === costSignature(bestMatchCost);
+                    if (!sameModel || !sameCost) ambiguous = true;
+                }
+            }
+
+            function searchInProvider(prov) {
+                if (!prov || !prov.models) return;
+                for (const mid of Object.keys(prov.models)) {
+                    considerCandidate(mid, prov.models[mid]);
+                }
+            }
+
+            for (const pid of Object.keys(providers)) {
+                searchInProvider(providers[pid]);
+            }
+            if (bestMatchCost && !ambiguous) return bestMatchCost;
+        }
+
         return null;
     }
 

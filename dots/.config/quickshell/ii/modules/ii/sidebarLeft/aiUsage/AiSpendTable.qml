@@ -28,6 +28,7 @@ ColumnLayout {
     }
     
     StyledText {
+        Layout.alignment: Qt.AlignHCenter
         font.pixelSize: Appearance.font.pixelSize.small
         font.weight: Font.Medium
         color: Appearance.colors.colOnLayer1
@@ -35,7 +36,7 @@ ColumnLayout {
     }
     
     GridLayout {
-        Layout.fillWidth: true
+        Layout.alignment: Qt.AlignHCenter
         columns: 3
         columnSpacing: 16
         rowSpacing: 6 // Increased row spacing for better visual rhythm
@@ -43,7 +44,6 @@ ColumnLayout {
         // --- Today Row ---
         StyledText {
             visible: rootTable.todayCost >= 0
-            Layout.fillWidth: true
             font.pixelSize: Appearance.font.pixelSize.small
             color: Appearance.colors.colSubtext
             text: Translation.tr("Today")
@@ -67,7 +67,6 @@ ColumnLayout {
         // --- This Week Row ---
         StyledText {
             visible: rootTable.weekCost >= 0
-            Layout.fillWidth: true
             font.pixelSize: Appearance.font.pixelSize.small
             color: Appearance.colors.colSubtext
             text: Translation.tr("This week")
@@ -91,7 +90,6 @@ ColumnLayout {
         // --- This Month Row ---
         StyledText {
             visible: rootTable.monthCost >= 0
-            Layout.fillWidth: true
             font.pixelSize: Appearance.font.pixelSize.small
             color: Appearance.colors.colSubtext
             text: Translation.tr("This month")

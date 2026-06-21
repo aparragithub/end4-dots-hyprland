@@ -29,6 +29,7 @@ ColumnLayout {
     }
 
     StyledText {
+        Layout.alignment: Qt.AlignHCenter
         font.pixelSize: Appearance.font.pixelSize.smaller
         font.weight: Font.Medium
         color: Appearance.colors.colSubtext
@@ -61,13 +62,11 @@ ColumnLayout {
                     font.pixelSize: Appearance.font.pixelSize.small
                     color: rowCol.isHovered ? Appearance.colors.colOnLayer1 : Appearance.colors.colSubtext
                     text: (modelData.model ?? "unknown")
-                          + (modelData.provider ? " · " + modelData.provider : "")
                     elide: Text.ElideRight
                     Behavior on color { ColorAnimation { duration: 150 } }
                 }
                 
                 StyledText {
-                    Layout.alignment: Qt.AlignRight
                     font.pixelSize: Appearance.font.pixelSize.small
                     font.weight: Font.Medium
                     color: Appearance.colors.colOnLayer1
@@ -77,7 +76,6 @@ ColumnLayout {
                 }
                 
                 StyledText {
-                    Layout.alignment: Qt.AlignRight
                     font.pixelSize: Appearance.font.pixelSize.small
                     color: Appearance.colors.colSubtext
                     text: rootBlock.formatTokens(modelData.tokens ?? 0)
@@ -87,10 +85,9 @@ ColumnLayout {
             
             RowLayout {
                 visible: (modelData.tok_input !== undefined) || (modelData.tok_output !== undefined)
-                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignHCenter
                 spacing: 4
 
-                Item { Layout.fillWidth: true }
                 StyledText {
                     font.pixelSize: Appearance.font.pixelSize.smaller
                     color: Appearance.colors.colSubtext
