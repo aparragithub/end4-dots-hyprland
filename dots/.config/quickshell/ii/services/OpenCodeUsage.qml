@@ -38,7 +38,9 @@ Singleton {
     property bool available: false
     property string error: ""
 
-    // Per-period arrays: each element is { model, provider, cost, tokens }
+    // Per-period arrays: each element is { model, provider, cost, tokens,
+    //   tok_input, tok_output, tok_reasoning, tok_cache_read, tok_cache_write,
+    //   estimatedCost }
     property var todayRows: []
     property var weekRows: []
     property var monthRows: []
@@ -50,6 +52,11 @@ Singleton {
     property int spentTodayTokens: 0
     property int spentWeekTokens: 0
     property int spentMonthTokens: 0
+
+    // models.dev estimated totals (rows where estimatedCost != null)
+    property real spentTodayCostEstimated: 0
+    property real spentWeekCostEstimated: 0
+    property real spentMonthCostEstimated: 0
 
     // ── Loading flag ─────────────────────────────────────────────────────────
     property bool usageLoading: Config.options.sidebar.aiUsage.providers.opencode.enable
@@ -74,24 +81,59 @@ Singleton {
         const weekArr  = data.week  ?? [];
         const monthArr = data.month ?? [];
 
+        // Annotate each row with estimatedCost via ModelPricing
+        function annotate(arr) {
+            for (const r of arr) {
+                const est = ModelPricing.cost(
+                    r.provider ?? "",
+                    r.model ?? "",
+                    {
+                        input:      r.tok_input     ?? 0,
+                        output:     (r.tok_output   ?? 0) + (r.tok_reasoning ?? 0),
+                        cacheRead:  r.tok_cache_read  ?? 0,
+                        cacheWrite: r.tok_cache_write ?? 0
+                    }
+                );
+                r.estimatedCost = est;
+            }
+        }
+        annotate(todayArr);
+        annotate(weekArr);
+        annotate(monthArr);
+
         root.todayRows = todayArr;
         root.weekRows  = weekArr;
         root.monthRows = monthArr;
 
-        let tc = 0, tt = 0;
-        for (const r of todayArr) { tc += r.cost ?? 0; tt += r.tokens ?? 0; }
-        root.spentTodayCost   = tc;
-        root.spentTodayTokens = tt;
+        let tc = 0, tt = 0, tcEst = 0;
+        for (const r of todayArr) {
+            tc    += r.estimatedCost ?? 0;
+            tt    += r.tokens ?? 0;
+            if (r.estimatedCost !== null && r.estimatedCost !== undefined) tcEst += r.estimatedCost;
+        }
+        root.spentTodayCost          = tc;
+        root.spentTodayTokens        = tt;
+        root.spentTodayCostEstimated = tcEst;
 
-        let wc = 0, wt = 0;
-        for (const r of weekArr) { wc += r.cost ?? 0; wt += r.tokens ?? 0; }
-        root.spentWeekCost   = wc;
-        root.spentWeekTokens = wt;
+        let wc = 0, wt = 0, wcEst = 0;
+        for (const r of weekArr) {
+            wc    += r.estimatedCost ?? 0;
+            wt    += r.tokens ?? 0;
+            if (r.estimatedCost !== null && r.estimatedCost !== undefined) wcEst += r.estimatedCost;
+        }
+        root.spentWeekCost          = wc;
+        root.spentWeekTokens        = wt;
+        root.spentWeekCostEstimated = wcEst;
 
-        let mc = 0, mt = 0;
-        for (const r of monthArr) { mc += r.cost ?? 0; mt += r.tokens ?? 0; }
-        root.spentMonthCost   = mc;
-        root.spentMonthTokens = mt;
+        let mc = 0, mt = 0, mcEst = 0;
+        for (const r of monthArr) {
+            mc    += r.estimatedCost ?? 0;
+            mt    += r.tokens ?? 0;
+            if (r.estimatedCost !== null && r.estimatedCost !== undefined) mcEst += r.estimatedCost;
+        }
+        root.spentMonthCost          = mc;
+        root.spentMonthTokens        = mt;
+        root.spentMonthCostEstimated = mcEst;
 
         root.available    = true;
         root.error        = "";
@@ -118,7 +160,7 @@ Singleton {
             "t0=$(date -d 'today 00:00' +%s 2>/dev/null || date -v0H -v0M -v0S +%s)000; " +
             "w0=$(date -d '7 days ago 00:00' +%s 2>/dev/null || date -v-7d -v0H -v0M -v0S +%s)000; " +
             "m0=$(date -d 'this month 00:00' +%s 2>/dev/null || date -v1d -v0H -v0M -v0S +%s)000; " +
-            "sel=\"SELECT json_extract(data,'$.modelID') AS model, json_extract(data,'$.providerID') AS provider, ROUND(SUM(COALESCE(json_extract(data,'$.cost'),0)),6) AS cost, CAST(SUM(COALESCE(json_extract(data,'$.tokens.total'),0)) AS INTEGER) AS tokens FROM message WHERE json_extract(data,'$.modelID') IS NOT NULL\"; " +
+            "sel=\"SELECT json_extract(data,'$.modelID') AS model, json_extract(data,'$.providerID') AS provider, ROUND(SUM(COALESCE(json_extract(data,'$.cost'),0)),6) AS cost, CAST(SUM(COALESCE(json_extract(data,'$.tokens.total'),0)) AS INTEGER) AS tokens, SUM(COALESCE(json_extract(data,'$.tokens.input'),0)) AS tok_input, SUM(COALESCE(json_extract(data,'$.tokens.output'),0)) AS tok_output, SUM(COALESCE(json_extract(data,'$.tokens.reasoning'),0)) AS tok_reasoning, SUM(COALESCE(json_extract(data,'$.tokens.cache.read'),0)) AS tok_cache_read, SUM(COALESCE(json_extract(data,'$.tokens.cache.write'),0)) AS tok_cache_write FROM message WHERE json_extract(data,'$.modelID') IS NOT NULL\"; " +
             "q_today=\"$sel AND time_created >= $t0 GROUP BY provider, model ORDER BY cost DESC\"; " +
             "q_week=\"$sel AND time_created >= $w0 GROUP BY provider, model ORDER BY cost DESC\"; " +
             "q_month=\"$sel AND time_created >= $m0 GROUP BY provider, model ORDER BY cost DESC\"; " +

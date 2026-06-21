@@ -54,19 +54,17 @@ Singleton {
     property real spentTodayCost: 0
     property real spentWeekCost: 0
 
+    // Token split totals for today (input net, output, cache read)
+    property int spentTodayInputTokens: 0
+    property int spentTodayOutputTokens: 0
+    property int spentTodayCacheTokens: 0
+
     // ── Loading flag ─────────────────────────────────────────────────────────
     property bool usageLoading: Config.options.sidebar.aiUsage.providers.openai.enable
 
-    // ── Pricing table — USD per 1M tokens, as-of 2026-06-20 (models.dev) ────
-    // This object is the SINGLE EDIT POINT for OpenAI pricing. Update here
-    // when prices change; nowhere else in this file references raw rates.
-    // Blended rates used for aggregated session totals (input+cached combined).
-    readonly property var _pricing: ({
-        "gpt-5":       { input: 1.25, cached: 0.125, output: 10.0 },
-        "gpt-5-mini":  { input: 0.25, cached: 0.025, output: 2.0  },
-        "gpt-5-codex": { input: 1.25, cached: 0.125, output: 10.0 },
-        "_default":    { input: 1.25, cached: 0.125, output: 10.0 }
-    })
+    // Hardcoded fallback rate (USD per token) used when ModelPricing has no entry.
+    // 1.25 per 1M tokens — roughly gpt-5-codex input rate.
+    readonly property real _fallbackRatePerToken: 1.25 / 1e6
 
     // ── Internal helpers ─────────────────────────────────────────────────────
     function _parseIso(s) {
@@ -100,21 +98,6 @@ Singleton {
         const mo = String(d.getMonth() + 1).padStart(2, "0");
         const dy = String(d.getDate()).padStart(2, "0");
         return `${y}-${mo}-${dy}`;
-    }
-
-    // Compute cost from a token-usage object (input/cached/output split).
-    // model: string key for pricing lookup (falls back to _default).
-    function _cost(tu, model) {
-        const p = root._pricing[model] ?? root._pricing["_default"];
-        return (tu.input_tokens    / 1e6) * p.input
-             + (tu.cached_input_tokens / 1e6) * p.cached
-             + (tu.output_tokens   / 1e6) * p.output;
-    }
-
-    // Compute cost from total_tokens only (aggregation path; no component split).
-    function _costBlended(totalTokens) {
-        const p = root._pricing["_default"];
-        return (totalTokens / 1e6) * p.input;
     }
 
     // ── Quota + current-session fetch ─────────────────────────────────────────
@@ -153,8 +136,25 @@ Singleton {
         // Session tokens from payload.info.total_token_usage
         const tu = data.session_tokens;
         if (tu) {
-            root.spentTodayTokens = tu.total_tokens ?? 0;
-            root.spentTodayCost   = root._cost(tu, "gpt-5-codex");
+            const modelId    = data.model_id ?? "gpt-5-codex";
+            const inputNet   = (tu.input_tokens ?? 0) - (tu.cached_input_tokens ?? 0);
+            const outputTotal = (tu.output_tokens ?? 0) + (tu.reasoning_output_tokens ?? 0);
+            const cacheRead  = tu.cached_input_tokens ?? 0;
+
+            root.spentTodayTokens        = tu.total_tokens ?? 0;
+            root.spentTodayInputTokens   = inputNet;
+            root.spentTodayOutputTokens  = outputTotal;
+            root.spentTodayCacheTokens   = cacheRead;
+
+            const est = ModelPricing.cost("openai", modelId, {
+                input:      inputNet,
+                output:     outputTotal,
+                cacheRead:  cacheRead,
+                cacheWrite: 0
+            });
+            root.spentTodayCost = est !== null
+                ? est
+                : (inputNet + cacheRead + outputTotal) * root._fallbackRatePerToken;
         }
 
         root.available    = true;
@@ -178,7 +178,8 @@ Singleton {
             "if [ -z \"$last\" ]; then echo '{\"error\":\"no usage yet\"}'; exit 0; fi; " +
             "echo \"$last\" | jq -c '{" +
             "rate_limits: .payload.rate_limits, " +
-            "session_tokens: .payload.info.total_token_usage" +
+            "session_tokens: .payload.info.total_token_usage, " +
+            "model_id: (.payload.info.model_id // .payload.model_id // \"gpt-5-codex\")" +
             "}'"
         ]
         stdout: StdioCollector {
@@ -230,8 +231,12 @@ Singleton {
             const d = new Date(`${row.date}T00:00:00`);
             if (isNaN(d.getTime())) continue;
             if (d >= weekStart) {
-                weekTokens += (row.tok ?? 0);
-                weekCost   += root._costBlended(row.tok ?? 0);
+                const tok = row.tok ?? 0;
+                weekTokens += tok;
+                const est = ModelPricing.cost("openai", "gpt-5-codex", {
+                    input: tok, output: 0, cacheRead: 0, cacheWrite: 0
+                });
+                weekCost += est !== null ? est : tok * root._fallbackRatePerToken;
             }
         }
 

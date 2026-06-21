@@ -54,6 +54,16 @@ Singleton {
     property real spentMonthCost: 0
     property int  spentTodayTokens: 0
 
+    // models.dev estimated cost totals
+    property real spentTodayCostEstimated: 0
+    property real spentWeekCostEstimated: 0
+    property real spentMonthCostEstimated: 0
+
+    // Token split totals (today only for display; week/month are aggregates)
+    property int spentTodayInputTokens: 0
+    property int spentTodayOutputTokens: 0
+    property int spentTodayCacheTokens: 0
+
     // ── Loading flags ────────────────────────────────────────────────────────
     // Start true while the provider is enabled so the UI shows "Loading…" until
     // the first fetch resolves, instead of flashing the "unavailable" notice for
@@ -195,7 +205,8 @@ Singleton {
         const curYear    = now.getFullYear();
         const curMonth   = now.getMonth();
 
-        let todayCost = 0, todayTokens = 0, weekCost = 0, monthCost = 0;
+        let todayTokens = 0, weekEstCost = 0, monthEstCost = 0, todayEstCost = 0;
+        let todayInputTokens = 0, todayOutputTokens = 0, todayCacheTokens = 0;
 
         for (const row of rows) {
             const p = row.period ?? row.date;
@@ -207,35 +218,59 @@ Singleton {
             // the per-model breakdowns whose modelName starts with "claude". This
             // keeps non-Claude spend (e.g. gpt-* from Codex) out of these figures.
             // Falls back to the row total only when no breakdown is present.
-            let cost = 0, tokens = 0;
+            let rowEstCost = 0, tokens = 0;
+            let rowInputTok = 0, rowOutputTok = 0, rowCacheTok = 0;
             const bd = row.modelBreakdowns ?? row.modelBreakdown ?? null;
             if (Array.isArray(bd) && bd.length > 0) {
                 for (const mb of bd) {
                     if (!String(mb.modelName ?? "").startsWith("claude")) continue;
-                    cost   += mb.cost ?? 0;
-                    tokens += (mb.inputTokens ?? 0) + (mb.outputTokens ?? 0)
-                            + (mb.cacheCreationTokens ?? 0) + (mb.cacheReadTokens ?? 0);
+                    const inTok    = mb.inputTokens ?? 0;
+                    const outTok   = mb.outputTokens ?? 0;
+                    const cacheRd  = mb.cacheReadTokens ?? 0;
+                    const cacheWr  = mb.cacheCreationTokens ?? 0;
+                    const allTok   = inTok + outTok + cacheRd + cacheWr;
+                    tokens += allTok;
+                    rowInputTok  += inTok;
+                    rowOutputTok += outTok;
+                    rowCacheTok  += cacheRd + cacheWr;
+                    // Use models.dev cost if available, else fall back to ccusage cost
+                    const est = ModelPricing.cost("anthropic", mb.modelName ?? "", {
+                        input:      inTok,
+                        output:     outTok,
+                        cacheRead:  cacheRd,
+                        cacheWrite: cacheWr
+                    });
+                    rowEstCost += (est !== null) ? est : (mb.cost ?? 0);
                 }
             } else {
-                cost   = row.totalCost   ?? row.cost   ?? 0;
-                tokens = row.totalTokens ?? row.tokens ?? 0;
+                rowEstCost = row.totalCost ?? row.cost ?? 0;
+                tokens     = row.totalTokens ?? row.tokens ?? 0;
             }
 
             if (p === todayStr) {
-                todayCost   += cost;
-                todayTokens += tokens;
+                todayEstCost      += rowEstCost;
+                todayTokens       += tokens;
+                todayInputTokens  += rowInputTok;
+                todayOutputTokens += rowOutputTok;
+                todayCacheTokens  += rowCacheTok;
             }
-            if (d >= weekStart) weekCost += cost;
-            if (d.getFullYear() === curYear && d.getMonth() === curMonth) monthCost += cost;
+            if (d >= weekStart) weekEstCost += rowEstCost;
+            if (d.getFullYear() === curYear && d.getMonth() === curMonth) monthEstCost += rowEstCost;
         }
 
-        root.spentTodayCost   = todayCost;
-        root.spentWeekCost    = weekCost;
-        root.spentMonthCost   = monthCost;
-        root.spentTodayTokens = todayTokens;
-        root.spentAvailable   = true;
-        root.spentError       = "";
-        root.spentLoading     = false;
+        root.spentTodayCost           = todayEstCost;
+        root.spentWeekCost            = weekEstCost;
+        root.spentMonthCost           = monthEstCost;
+        root.spentTodayTokens         = todayTokens;
+        root.spentTodayCostEstimated  = todayEstCost;
+        root.spentWeekCostEstimated   = weekEstCost;
+        root.spentMonthCostEstimated  = monthEstCost;
+        root.spentTodayInputTokens    = todayInputTokens;
+        root.spentTodayOutputTokens   = todayOutputTokens;
+        root.spentTodayCacheTokens    = todayCacheTokens;
+        root.spentAvailable           = true;
+        root.spentError               = "";
+        root.spentLoading             = false;
     }
 
     Process {
@@ -273,6 +308,15 @@ Singleton {
                 root.spentAvailable = false;
                 root.spentError     = `ccusage exited with code ${code}`;
             }
+        }
+    }
+
+    // Re-compute spend costs when ModelPricing finishes loading so costs
+    // update even if pricing data arrived after the first ccusage fetch.
+    Connections {
+        target: ModelPricing
+        function onReadyChanged() {
+            if (ModelPricing.ready) root._fetchSpend();
         }
     }
 
