@@ -33,6 +33,10 @@ function v(){
 # When use v() for a defined function, use x() INSIDE its definition to catch errors.
 function x(){
   if "$@";then local cmdstatus=0;else local cmdstatus=1;fi # 0=normal; 1=failed; 2=failed but ignored
+  if [[ $cmdstatus == 1 && "$ask" == "false" ]]; then
+    echo -e "${STY_RED}[$0]: Command \"${STY_GREEN}$*${STY_RED}\" has failed. Exiting...${STY_RST}"
+    exit 1
+  fi
   while [ $cmdstatus == 1 ] ;do
     echo -e "${STY_RED}[$0]: Command \"${STY_GREEN}$*${STY_RED}\" has failed."
     echo -e "You may need to resolve the problem manually BEFORE repeating this command."

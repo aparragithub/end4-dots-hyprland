@@ -105,7 +105,10 @@ function install_file__auto_backup(){
   local t=$2
   if [ -f $t ];then
     echo -e "${STY_YELLOW}[$0]: \"$t\" already exists.${STY_RST}"
-    if ${INSTALL_FIRSTRUN};then
+    if [[ "$ask" == "false" ]]; then
+      echo -e "${STY_BLUE}[$0]: Force mode enabled, overwriting existing file.${STY_RST}"
+      v cp_file $s $t
+    elif ${INSTALL_FIRSTRUN};then
       echo -e "${STY_BLUE}[$0]: It seems to be the firstrun.${STY_RST}"
       v mv $t $t.old
       v cp_file $s $t
@@ -221,7 +224,9 @@ function preload_gtk_colors(){
   fi
 
   v mkdir -p "$XDG_CONFIG_HOME/gtk-3.0" "$XDG_CONFIG_HOME/gtk-4.0"
-  v matugen --source-color-index 0 color hex '#bcc8d3' --mode dark --type scheme-tonal-spot
+  if ! matugen --source-color-index 0 color hex '#bcc8d3' --mode dark --type scheme-tonal-spot; then
+    printf "${STY_YELLOW}[$0]: Matugen GTK color preload failed, continuing with existing GTK colors.${STY_RST}\n"
+  fi
 }
 
 function apply_quickshell_defaults(){
