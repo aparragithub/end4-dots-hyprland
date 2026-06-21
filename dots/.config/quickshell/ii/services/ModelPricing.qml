@@ -27,12 +27,13 @@ Singleton {
     // ── Pricing lookup ───────────────────────────────────────────────────────
     // Returns the cost object for (providerId, modelId), or null if not found.
     // Lookup order:
-    //   1. data.providers[providerId].models[modelId].cost
-    //   2. Strip any "provider/" prefix from modelId and retry same provider
-    //   3. Search ALL providers for modelId key
+    //   1. data.providers[providerId].models[modelId].cost, or root provider map
+    //   2. Strip "free/gratis" suffixes and retry paid/base variants
+    //   3. Strip any "provider/" prefix from modelId and retry
+    //   4. Search ALL providers for modelId key
     function price(providerId, modelId) {
         if (!root.data) return null;
-        const providers = root.data.providers;
+        const providers = root.data.providers ?? root.data;
         if (!providers) return null;
 
         // Helper: extract cost from a model entry
@@ -41,11 +42,76 @@ Singleton {
             return entry.cost ?? null;
         }
 
+        function isZeroCost(c) {
+            if (!c) return false;
+            return (c.input ?? 0) === 0
+                && (c.output ?? 0) === 0
+                && (c.cache_read ?? 0) === 0
+                && (c.cache_write ?? 0) === 0;
+        }
+
+        function hasFreeMarker(id) {
+            return /(^|[-_./ ])(free|gratis|gratuito)([-_./ ]|$)/i.test(String(id));
+        }
+
+        function baseModelId(id) {
+            return String(id)
+                .replace(/(^|[-_./ ])(free|gratis|gratuito)([-_./ ]|$)/ig, "$1")
+                .replace(/[-_./ ]+$/g, "");
+        }
+
+        function providerMatches(providerKey) {
+            if (!providerId) return false;
+            return providerKey === providerId
+                || providerKey === `${providerId}-go`
+                || providerId === `${providerKey}-go`;
+        }
+
+        function exactCostInProvider(pid, id, requireNonZero) {
+            const prov = providers[pid];
+            if (!prov || !prov.models) return null;
+            const c = costFrom(prov.models[id]);
+            if (!c) return null;
+            if (requireNonZero && isZeroCost(c)) return null;
+            return c;
+        }
+
+        function exactCostAllProviders(id, requireNonZero) {
+            let match = null;
+            let ambiguous = false;
+            for (const pid of Object.keys(providers)) {
+                if (!providerMatches(pid)) continue;
+                const c = exactCostInProvider(pid, id, requireNonZero);
+                if (c) return c;
+            }
+            for (const pid of Object.keys(providers)) {
+                if (providerMatches(pid)) continue;
+                const c = exactCostInProvider(pid, id, requireNonZero);
+                if (!c) continue;
+                if (!match) {
+                    match = c;
+                } else {
+                    ambiguous = true;
+                }
+            }
+            return ambiguous ? null : match;
+        }
+
+        function baseCostForFreeAlias(id) {
+            if (!hasFreeMarker(id)) return null;
+            const base = baseModelId(id);
+            if (!base || base === id) return null;
+            return exactCostAllProviders(base, true);
+        }
+
         // 1. Direct lookup
         const directProvider = providers[providerId];
         if (directProvider && directProvider.models) {
             const c = costFrom(directProvider.models[modelId]);
-            if (c) return c;
+            if (c) {
+                const baseCost = isZeroCost(c) ? baseCostForFreeAlias(modelId) : null;
+                return baseCost ?? c;
+            }
         }
 
         // 2. Strip provider prefix and retry same provider
@@ -54,7 +120,10 @@ Singleton {
             const stripped = modelId.slice(slashIdx + 1);
             if (directProvider && directProvider.models) {
                 const c = costFrom(directProvider.models[stripped]);
-                if (c) return c;
+                if (c) {
+                    const baseCost = isZeroCost(c) ? baseCostForFreeAlias(stripped) : null;
+                    return baseCost ?? c;
+                }
             }
         }
 
@@ -63,25 +132,49 @@ Singleton {
             const prov = providers[pid];
             if (!prov || !prov.models) continue;
             const c = costFrom(prov.models[modelId]);
-            if (c) return c;
+            if (c) {
+                const baseCost = isZeroCost(c) ? baseCostForFreeAlias(modelId) : null;
+                return baseCost ?? c;
+            }
             if (slashIdx !== -1) {
                 const stripped = modelId.slice(slashIdx + 1);
                 const c2 = costFrom(prov.models[stripped]);
-                if (c2) return c2;
+                if (c2) {
+                    const baseCost = isZeroCost(c2) ? baseCostForFreeAlias(stripped) : null;
+                    return baseCost ?? c2;
+                }
             }
         }
+
+        const baseAliasCost = baseCostForFreeAlias(modelId);
+        if (baseAliasCost) return baseAliasCost;
 
         // 4. Fuzzy / partial substring search (e.g. for free/mimo suffixes)
         function normalize(s) {
             return String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
         }
-        const normModelId = normalize(modelId);
-        if (normModelId.length >= 6) {
-            let bestMatchCost = null;
-            let bestMatchLength = 0;
-            let bestMatchKey = "";
-            let ambiguous = false;
 
+        function canonicalForms(id) {
+            const raw = String(id);
+            const slashIdx = raw.lastIndexOf("/");
+            const stripped = slashIdx !== -1 ? raw.slice(slashIdx + 1) : raw;
+            const forms = [
+                raw,
+                stripped,
+                baseModelId(raw),
+                baseModelId(stripped)
+            ];
+            const out = [];
+            for (const form of forms) {
+                const norm = normalize(form);
+                if (norm.length >= 4 && out.indexOf(norm) === -1) out.push(norm);
+            }
+            return out;
+        }
+
+        const normModelForms = canonicalForms(modelId);
+        const longestModelForm = normModelForms.reduce((best, form) => Math.max(best, form.length), 0);
+        if (longestModelForm >= 6) {
             function costSignature(c) {
                 return [
                     c.input ?? "",
@@ -91,41 +184,78 @@ Singleton {
                 ].join("|");
             }
 
-            function considerCandidate(mid, entry) {
-                const normMid = normalize(mid);
-                if (normMid.length < 4) return;
-                if (!normModelId.includes(normMid) && !normMid.includes(normModelId)) return;
+            function newSearchState() {
+                return {
+                    cost: null,
+                    length: 0,
+                    key: "",
+                    ambiguous: false
+                };
+            }
 
-                const c = costFrom(entry);
+            function bestPairLength(candidateForms) {
+                let best = 0;
+                let bestKey = "";
+                for (const queryForm of normModelForms) {
+                    for (const candidateForm of candidateForms) {
+                        let len = 0;
+                        if (queryForm === candidateForm) {
+                            len = queryForm.length + 1000;
+                        } else if (queryForm.includes(candidateForm) || candidateForm.includes(queryForm)) {
+                            len = Math.min(queryForm.length, candidateForm.length);
+                        }
+                        if (len > best) {
+                            best = len;
+                            bestKey = candidateForm;
+                        }
+                    }
+                }
+                return { length: best, key: bestKey };
+            }
+
+            function considerCandidate(state, mid, entry) {
+                const pair = bestPairLength(canonicalForms(mid));
+                if (pair.length < 6) return;
+
+                const rawCost = costFrom(entry);
+                const c = rawCost && isZeroCost(rawCost)
+                    ? (baseCostForFreeAlias(mid) ?? rawCost)
+                    : rawCost;
                 if (!c) return;
 
-                const matchLen = Math.min(normMid.length, normModelId.length);
-                if (matchLen > bestMatchLength) {
-                    bestMatchCost = c;
-                    bestMatchLength = matchLen;
-                    bestMatchKey = normMid;
-                    ambiguous = false;
+                if (pair.length > state.length) {
+                    state.cost = c;
+                    state.length = pair.length;
+                    state.key = pair.key;
+                    state.ambiguous = false;
                     return;
                 }
 
-                if (matchLen === bestMatchLength) {
-                    const sameModel = normMid === bestMatchKey;
-                    const sameCost = bestMatchCost && costSignature(c) === costSignature(bestMatchCost);
-                    if (!sameModel || !sameCost) ambiguous = true;
+                if (pair.length === state.length) {
+                    const sameModel = pair.key === state.key;
+                    const sameCost = state.cost && costSignature(c) === costSignature(state.cost);
+                    if (!sameModel || !sameCost) state.ambiguous = true;
                 }
             }
 
-            function searchInProvider(prov) {
+            function searchInProvider(state, prov) {
                 if (!prov || !prov.models) return;
                 for (const mid of Object.keys(prov.models)) {
-                    considerCandidate(mid, prov.models[mid]);
+                    considerCandidate(state, mid, prov.models[mid]);
                 }
             }
 
+            const providerState = newSearchState();
             for (const pid of Object.keys(providers)) {
-                searchInProvider(providers[pid]);
+                if (providerMatches(pid)) searchInProvider(providerState, providers[pid]);
             }
-            if (bestMatchCost && !ambiguous) return bestMatchCost;
+            if (providerState.cost && !providerState.ambiguous) return providerState.cost;
+
+            const globalState = newSearchState();
+            for (const pid of Object.keys(providers)) {
+                if (!providerMatches(pid)) searchInProvider(globalState, providers[pid]);
+            }
+            if (globalState.cost && !globalState.ambiguous) return globalState.cost;
         }
 
         return null;
