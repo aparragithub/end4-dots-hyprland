@@ -13,7 +13,7 @@ import qs.modules.common
  * not expose them and fabricating values would be a correctness violation.
  *
  * Data source:
- *   POST https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary
+ *   POST https://daily-cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary
  *   Token: read at runtime from OS keyring via `secret-tool lookup service
  *          gemini username antigravity`. The token is NEVER stored in any QML
  *          property, file, or log — it lives only in the spawned bash subprocess.
@@ -142,7 +142,7 @@ Singleton {
             "  -H \"User-Agent: $UA\" " +
             "  -H 'Content-Type: application/json' " +
             "  -d '{}' " +
-            "  'https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary' 2>/dev/null); " +
+            "  'https://daily-cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary' 2>/dev/null); " +
             // Step 3: forward groups array; token never appears in output
             "echo \"$resp\" | jq -c '{groups: (.groups // [])}' " +
             "2>/dev/null || echo '{\"error\":\"unavailable (parse failed)\"}'"
