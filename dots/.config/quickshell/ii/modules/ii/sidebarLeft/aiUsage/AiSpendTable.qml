@@ -35,79 +35,86 @@ ColumnLayout {
         text: rootTable.title
     }
     
-    GridLayout {
-        Layout.alignment: Qt.AlignHCenter
-        columns: 3
-        columnSpacing: 16
-        rowSpacing: 6 // Increased row spacing for better visual rhythm
-        
-        // --- Today Row ---
-        StyledText {
-            visible: rootTable.todayCost >= 0
-            font.pixelSize: Appearance.font.pixelSize.small
-            color: Appearance.colors.colSubtext
-            text: Translation.tr("Today")
+    RowLayout {
+        Layout.fillWidth: true
+
+        Item { Layout.fillWidth: true }
+
+        GridLayout {
+            columns: 3
+            columnSpacing: 16
+            rowSpacing: 6 // Increased row spacing for better visual rhythm
+
+            // --- Today Row ---
+            StyledText {
+                visible: rootTable.todayCost >= 0
+                font.pixelSize: Appearance.font.pixelSize.small
+                color: Appearance.colors.colSubtext
+                text: Translation.tr("Today")
+            }
+            StyledText {
+                visible: rootTable.todayCost >= 0
+                Layout.alignment: Qt.AlignRight
+                font.pixelSize: Appearance.font.pixelSize.small
+                font.weight: Font.Medium
+                color: Appearance.colors.colOnLayer1
+                text: rootTable.formatCost(rootTable.todayCost)
+            }
+            StyledText {
+                visible: rootTable.todayCost >= 0
+                Layout.alignment: Qt.AlignRight
+                font.pixelSize: Appearance.font.pixelSize.small
+                color: Appearance.colors.colSubtext
+                text: rootTable.todayTokensText
+            }
+
+            // --- This Week Row ---
+            StyledText {
+                visible: rootTable.weekCost >= 0
+                font.pixelSize: Appearance.font.pixelSize.small
+                color: Appearance.colors.colSubtext
+                text: Translation.tr("This week")
+            }
+            StyledText {
+                visible: rootTable.weekCost >= 0
+                Layout.alignment: Qt.AlignRight
+                font.pixelSize: Appearance.font.pixelSize.small
+                font.weight: Font.Medium
+                color: Appearance.colors.colOnLayer1
+                text: rootTable.formatCost(rootTable.weekCost)
+            }
+            StyledText {
+                visible: rootTable.weekCost >= 0
+                Layout.alignment: Qt.AlignRight
+                font.pixelSize: Appearance.font.pixelSize.small
+                color: Appearance.colors.colSubtext
+                text: rootTable.weekTokensText
+            }
+
+            // --- This Month Row ---
+            StyledText {
+                visible: rootTable.monthCost >= 0
+                font.pixelSize: Appearance.font.pixelSize.small
+                color: Appearance.colors.colSubtext
+                text: Translation.tr("This month")
+            }
+            StyledText {
+                visible: rootTable.monthCost >= 0
+                Layout.alignment: Qt.AlignRight
+                font.pixelSize: Appearance.font.pixelSize.small
+                font.weight: Font.Medium
+                color: Appearance.colors.colOnLayer1
+                text: rootTable.formatCost(rootTable.monthCost)
+            }
+            StyledText {
+                visible: rootTable.monthCost >= 0
+                Layout.alignment: Qt.AlignRight
+                font.pixelSize: Appearance.font.pixelSize.small
+                color: Appearance.colors.colSubtext
+                text: rootTable.monthTokensText
+            }
         }
-        StyledText {
-            visible: rootTable.todayCost >= 0
-            Layout.alignment: Qt.AlignRight
-            font.pixelSize: Appearance.font.pixelSize.small
-            font.weight: Font.Medium
-            color: Appearance.colors.colOnLayer1
-            text: rootTable.formatCost(rootTable.todayCost)
-        }
-        StyledText {
-            visible: rootTable.todayCost >= 0
-            Layout.alignment: Qt.AlignRight
-            font.pixelSize: Appearance.font.pixelSize.small
-            color: Appearance.colors.colSubtext
-            text: rootTable.todayTokensText
-        }
-        
-        // --- This Week Row ---
-        StyledText {
-            visible: rootTable.weekCost >= 0
-            font.pixelSize: Appearance.font.pixelSize.small
-            color: Appearance.colors.colSubtext
-            text: Translation.tr("This week")
-        }
-        StyledText {
-            visible: rootTable.weekCost >= 0
-            Layout.alignment: Qt.AlignRight
-            font.pixelSize: Appearance.font.pixelSize.small
-            font.weight: Font.Medium
-            color: Appearance.colors.colOnLayer1
-            text: rootTable.formatCost(rootTable.weekCost)
-        }
-        StyledText {
-            visible: rootTable.weekCost >= 0
-            Layout.alignment: Qt.AlignRight
-            font.pixelSize: Appearance.font.pixelSize.small
-            color: Appearance.colors.colSubtext
-            text: rootTable.weekTokensText
-        }
-        
-        // --- This Month Row ---
-        StyledText {
-            visible: rootTable.monthCost >= 0
-            font.pixelSize: Appearance.font.pixelSize.small
-            color: Appearance.colors.colSubtext
-            text: Translation.tr("This month")
-        }
-        StyledText {
-            visible: rootTable.monthCost >= 0
-            Layout.alignment: Qt.AlignRight
-            font.pixelSize: Appearance.font.pixelSize.small
-            font.weight: Font.Medium
-            color: Appearance.colors.colOnLayer1
-            text: rootTable.formatCost(rootTable.monthCost)
-        }
-        StyledText {
-            visible: rootTable.monthCost >= 0
-            Layout.alignment: Qt.AlignRight
-            font.pixelSize: Appearance.font.pixelSize.small
-            color: Appearance.colors.colSubtext
-            text: rootTable.monthTokensText
-        }
+
+        Item { Layout.fillWidth: true }
     }
 }

@@ -127,8 +127,10 @@ Item {
                         // Quota gauges row (5h + 7d)
                         RowLayout {
                             visible: AiUsage.claudeAvailable
-                            Layout.alignment: Qt.AlignHCenter
+                            Layout.fillWidth: true
                             spacing: 20
+                            
+                            Item { Layout.fillWidth: true }
                             
                             AiQuotaGauge {
                                 visible: AiUsage.fiveHour >= 0
@@ -150,6 +152,8 @@ Item {
                                 title: Translation.tr("Week · Sonnet")
                                 subtitle: AiUsage.timeUntil(AiUsage.sevenDaySonnetReset)
                             }
+                            
+                            Item { Layout.fillWidth: true }
                         }
                     }
                     
@@ -286,8 +290,10 @@ Item {
                     
                     // Quota gauges row (5h + 7d)
                     RowLayout {
-                        Layout.alignment: Qt.AlignHCenter
+                        Layout.fillWidth: true
                         spacing: 20
+                        
+                        Item { Layout.fillWidth: true }
                         
                         AiQuotaGauge {
                             visible: OpenAiUsage.fiveHour >= 0
@@ -302,6 +308,8 @@ Item {
                             title: Translation.tr("Week · All")
                             subtitle: OpenAiUsage.timeUntil(OpenAiUsage.sevenDayReset)
                         }
+                        
+                        Item { Layout.fillWidth: true }
                     }
                     
                     // Divider
@@ -361,9 +369,11 @@ Item {
                             }
                             
                             RowLayout {
-                                Layout.alignment: Qt.AlignHCenter
+                                Layout.fillWidth: true
                                 spacing: 20
-                                
+
+                                Item { Layout.fillWidth: true }
+
                                 Repeater {
                                     model: modelData.buckets
                                     
@@ -376,6 +386,8 @@ Item {
                                             : "—"
                                     }
                                 }
+                                
+                                Item { Layout.fillWidth: true }
                             }
                         }
                     }

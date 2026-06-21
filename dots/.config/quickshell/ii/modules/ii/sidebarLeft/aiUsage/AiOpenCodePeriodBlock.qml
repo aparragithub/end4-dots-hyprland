@@ -17,8 +17,8 @@ ColumnLayout {
     spacing: 4
     
     function formatCost(v) {
-        if (typeof v !== "number" || isNaN(v)) return "$0";
-        return "$" + Math.ceil(v);
+        if (typeof v !== "number" || isNaN(v)) return "$0.00";
+        return "$" + v.toFixed(2);
     }
     
     function formatTokens(n) {
@@ -41,16 +41,20 @@ ColumnLayout {
         delegate: ColumnLayout {
             id: rowCol
             required property var modelData
+            required property int index
             Layout.fillWidth: true
             spacing: 2
-            
+
             property bool isHovered: hoverHandler.hovered
-            
-            // Subtly highlights the active row on hover
+
+            // Divider between models (skipped before the first row)
             Rectangle {
+                visible: rowCol.index > 0
                 Layout.fillWidth: true
-                height: 1
-                color: "transparent"
+                Layout.topMargin: 4
+                Layout.bottomMargin: 4
+                Layout.preferredHeight: 1
+                color: Appearance.colors.colOutlineVariant
             }
 
             RowLayout {
@@ -85,7 +89,7 @@ ColumnLayout {
             
             RowLayout {
                 visible: (modelData.tok_input !== undefined) || (modelData.tok_output !== undefined)
-                Layout.alignment: Qt.AlignHCenter
+                Layout.alignment: Qt.AlignRight
                 spacing: 4
 
                 StyledText {
