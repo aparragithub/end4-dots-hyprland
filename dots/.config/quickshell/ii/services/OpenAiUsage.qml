@@ -9,7 +9,7 @@ import qs.modules.common
 /**
  * Codex (OpenAI) usage service — quota and estimated API-rate cost.
  *
- * Data source: local files under ~/.codex/sessions/**/rollout-*.jsonl
+ * Data source: local files under ~/.codex/sessions/<date>/rollout-*.jsonl
  * No network requests are made. All values derive from the newest rollout
  * file's last event_msg with payload.type == "token_count".
  *
