@@ -16,3 +16,8 @@ __pycache__/
 # Emacs auto backup file
 *~
 sdata/dist-arch/mkos-big-sur-icon-theme/Mkos-Big-Sur/
+
+# Gentle AI / SDD working artifacts (not part of the dotfiles config)
+.atl/
+docs/superpowers/
+mejoras_ai_usage.md
