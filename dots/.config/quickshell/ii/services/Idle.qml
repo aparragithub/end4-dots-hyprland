@@ -2,6 +2,7 @@ pragma Singleton
 import qs.modules.common
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 
 /**
@@ -31,6 +32,29 @@ Singleton {
             root.inhibit = !root.inhibit;
         }
         Persistent.states.idle.inhibit = root.inhibit;
+    }
+
+    // Belt-and-suspenders: also freeze the hypridle process while inhibiting.
+    // The Wayland IdleInhibitor surface can be torn down on monitor hotplug
+    // (e.g. a KVM switch), which would silently re-enable idle and let the
+    // machine suspend even with the toggle on. Pausing the daemon with SIGSTOP
+    // guarantees no lock/dpms/suspend can fire, independent of any surface.
+    onInhibitChanged: {
+        if (root.inhibit) {
+            freezeIdleDaemon.running = true;
+        } else {
+            resumeIdleDaemon.running = true;
+        }
+    }
+
+    Process {
+        id: freezeIdleDaemon
+        command: ["pkill", "-STOP", "hypridle"]
+    }
+
+    Process {
+        id: resumeIdleDaemon
+        command: ["pkill", "-CONT", "hypridle"]
     }
 
     IdleInhibitor {

@@ -627,5 +627,7 @@
   "Week · Sonnet": "Week · Sonnet",
   "now": "now",
   "tokens": "tokens",
-  "Estimated cost (API rate)": "Estimated cost (API rate)"
+  "Estimated cost (API rate)": "Estimated cost (API rate)",
+  "Estimated API-rate cost": "Estimated API-rate cost",
+  "Usage unavailable": "Usage unavailable"
 }
