@@ -6,10 +6,6 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 
-// Shortcuts to provider config nodes for readable bindings below
-// (avoids repeating the full path multiple times in each card).
-// All references to providers.* use these aliases.
-
 /**
  * AI Usage sidebar tab content.
  *
@@ -58,8 +54,7 @@ Item {
     }
 
     // ── Helper: format token count with 1 decimal place ──────────────────────
-    // Uses toFixed(1) + parseFloat to avoid the Math.ceil over-rounding bug
-    // where e.g. 1,100,000 tokens would display as "2M" instead of "1.1M".
+    // Uses toFixed(1) + parseFloat to avoid the Math.ceil over-rounding bug.
     function formatTokens(n) {
         if (typeof n !== "number" || isNaN(n)) return "0";
         if (n >= 1_000_000) return parseFloat((n / 1_000_000).toFixed(1)) + "M";
@@ -73,99 +68,40 @@ Item {
 
         ColumnLayout {
             width: root.width
-            spacing: 10
+            spacing: 12
 
             // ── Padding top ──────────────────────────────────────────────────
             Item { Layout.preferredHeight: 4 }
 
             // ── Claude card ──────────────────────────────────────────────────
-            Rectangle {
+            AiProviderCard {
                 id: claudeCard
-                Layout.fillWidth: true
-                Layout.leftMargin: 12
-                Layout.rightMargin: 12
-                radius: Appearance.rounding.normal
-                color: Appearance.colors.colLayer2
-                implicitHeight: claudeCardColumn.implicitHeight + 24
-
+                title: AiUsage.subscriptionType.length > 0
+                    ? "Claude " + AiUsage.subscriptionType.charAt(0).toUpperCase()
+                                 + AiUsage.subscriptionType.slice(1)
+                    : "Claude"
+                iconName: "auto_awesome"
+                service: AiUsage
+                accentColor: Appearance.colors.colPrimary
+                
                 // Determine display mode
-                property bool quotaOk:   AiUsage.claudeAvailable && !AiUsage.claudeError
-                property bool spentOk:   AiUsage.spentAvailable  && !AiUsage.spentError
-                property bool bothFail:  !quotaOk && !spentOk && !AiUsage.quotaLoading && !AiUsage.spentLoading
-
+                property bool quotaOk: AiUsage.claudeAvailable && !AiUsage.claudeError
+                property bool spentOk: AiUsage.spentAvailable  && !AiUsage.spentError
+                
+                bothFail: !quotaOk && !spentOk && !AiUsage.quotaLoading && !AiUsage.spentLoading
+                bothFailMessage: Translation.tr("Usage data unavailable. Check your Claude token and that Node.js is installed.")
+                forceContentVisible: !bothFail
+                
+                // Custom Content Slot
                 ColumnLayout {
-                    id: claudeCardColumn
-                    anchors {
-                        left: parent.left; right: parent.right
-                        top: parent.top
-                        margins: 12
-                    }
-                    spacing: 10
-
-                    // ── Card header ──────────────────────────────────────────
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 8
-
-                        MaterialSymbol {
-                            text: "auto_awesome"
-                            iconSize: Appearance.font.pixelSize.larger
-                            color: Appearance.colors.colPrimary
-                        }
-
-                        StyledText {
-                            Layout.fillWidth: true
-                            font.pixelSize: Appearance.font.pixelSize.large
-                            font.weight: Font.Medium
-                            color: Appearance.colors.colOnLayer1
-                            text: AiUsage.subscriptionType.length > 0
-                                ? "Claude " + AiUsage.subscriptionType.charAt(0).toUpperCase()
-                                             + AiUsage.subscriptionType.slice(1)
-                                : "Claude"
-                        }
-
-                        // Refresh button
-                        MouseArea {
-                            id: refreshArea
-                            implicitWidth: 28
-                            implicitHeight: 28
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: AiUsage.refresh()
-
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: Appearance.rounding.small
-                                color: refreshArea.containsMouse
-                                    ? Appearance.colors.colLayer3
-                                    : "transparent"
-                            }
-
-                            MaterialSymbol {
-                                anchors.centerIn: parent
-                                text: "refresh"
-                                iconSize: Appearance.font.pixelSize.larger
-                                color: Appearance.colors.colOnLayer1
-                            }
-                        }
-                    }
-
-                    // ── Both-fail state ──────────────────────────────────────
-                    StyledText {
-                        visible: claudeCard.bothFail
-                        Layout.fillWidth: true
-                        wrapMode: Text.WordWrap
-                        color: Appearance.colors.colSubtext
-                        font.pixelSize: Appearance.font.pixelSize.small
-                        text: Translation.tr("Usage data unavailable. Check your Claude token and that Node.js is installed.")
-                    }
-
+                    Layout.fillWidth: true
+                    spacing: 12
+                    
                     // ── Quota section ────────────────────────────────────────
                     ColumnLayout {
-                        visible: !claudeCard.bothFail
                         Layout.fillWidth: true
                         spacing: 8
-
+                        
                         // Loading indicator for quota
                         StyledText {
                             visible: AiUsage.quotaLoading && !AiUsage.claudeAvailable
@@ -174,7 +110,7 @@ Item {
                             font.pixelSize: Appearance.font.pixelSize.small
                             text: Translation.tr("Loading quota…")
                         }
-
+                        
                         // Quota unavailable notice
                         StyledText {
                             visible: !AiUsage.quotaLoading
@@ -187,157 +123,36 @@ Item {
                             text: Translation.tr("Quota unavailable") +
                                   (AiUsage.claudeError.length > 0 ? ": " + AiUsage.claudeError : "")
                         }
-
+                        
                         // Quota gauges row (5h + 7d)
                         RowLayout {
                             visible: AiUsage.claudeAvailable
                             Layout.fillWidth: true
                             spacing: 20
-
-                            // ── 5-hour gauge ─────────────────────────────────
-                            ColumnLayout {
-                                // -1 means "not reported by the API" → hide the
-                                // gauge rather than drawing a misleading 0%.
+                            
+                            AiQuotaGauge {
                                 visible: AiUsage.fiveHour >= 0
-                                Layout.alignment: Qt.AlignHCenter
-                                spacing: 4
-
-                                ClippedFilledCircularProgress {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    implicitSize: 64
-                                    lineWidth: 4
-                                    enableAnimation: true
-                                    value: Math.max(0, Math.min(1, AiUsage.fiveHour / 100))
-                                    colPrimary: AiUsage.fiveHour >= Config.options.sidebar.aiUsage.warningThreshold
-                                        ? Appearance.colors.colError
-                                        : Appearance.colors.colPrimary
-                                    accountForLightBleeding: AiUsage.fiveHour < Config.options.sidebar.aiUsage.warningThreshold
-
-                                    // Centered percentage text (replaces default text mask)
-                                    Item {
-                                        width: 64; height: 64
-                                        StyledText {
-                                            anchors.centerIn: parent
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            font.weight: Font.Medium
-                                            color: Appearance.colors.colOnLayer1
-                                            text: Math.round(AiUsage.fiveHour) + "%"
-                                        }
-                                    }
-                                }
-
-                                StyledText {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    font.weight: Font.Medium
-                                    color: Appearance.colors.colOnLayer1
-                                    text: Translation.tr("Session (5h)")
-                                }
-
-                                StyledText {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    font.pixelSize: Appearance.font.pixelSize.smaller
-                                    color: Appearance.colors.colSubtext
-                                    text: AiUsage.timeUntil(AiUsage.fiveHourReset)
-                                }
+                                valuePercent: AiUsage.fiveHour
+                                title: Translation.tr("Session (5h)")
+                                subtitle: AiUsage.timeUntil(AiUsage.fiveHourReset)
                             }
-
-                            // ── 7-day gauge ──────────────────────────────────
-                            ColumnLayout {
-                                // -1 means "not reported by the API" → hide the
-                                // gauge rather than drawing a misleading 0%.
+                            
+                            AiQuotaGauge {
                                 visible: AiUsage.sevenDay >= 0
-                                Layout.alignment: Qt.AlignHCenter
-                                spacing: 4
-
-                                ClippedFilledCircularProgress {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    implicitSize: 64
-                                    lineWidth: 4
-                                    enableAnimation: true
-                                    value: Math.max(0, Math.min(1, AiUsage.sevenDay / 100))
-                                    colPrimary: AiUsage.sevenDay >= Config.options.sidebar.aiUsage.warningThreshold
-                                        ? Appearance.colors.colError
-                                        : Appearance.colors.colPrimary
-                                    accountForLightBleeding: AiUsage.sevenDay < Config.options.sidebar.aiUsage.warningThreshold
-
-                                    Item {
-                                        width: 64; height: 64
-                                        StyledText {
-                                            anchors.centerIn: parent
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            font.weight: Font.Medium
-                                            color: Appearance.colors.colOnLayer1
-                                            text: Math.round(AiUsage.sevenDay) + "%"
-                                        }
-                                    }
-                                }
-
-                                StyledText {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    font.weight: Font.Medium
-                                    color: Appearance.colors.colOnLayer1
-                                    text: Translation.tr("Week · All")
-                                }
-
-                                StyledText {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    font.pixelSize: Appearance.font.pixelSize.smaller
-                                    color: Appearance.colors.colSubtext
-                                    text: AiUsage.timeUntil(AiUsage.sevenDayReset)
-                                }
+                                valuePercent: AiUsage.sevenDay
+                                title: Translation.tr("Week · All")
+                                subtitle: AiUsage.timeUntil(AiUsage.sevenDayReset)
                             }
-
-                            // ── 7-day Sonnet gauge ───────────────────────────
-                            ColumnLayout {
-                                // -1 means "not reported by the API" → hide the
-                                // gauge rather than drawing a misleading 0%.
+                            
+                            AiQuotaGauge {
                                 visible: AiUsage.sevenDaySonnet >= 0
-                                Layout.alignment: Qt.AlignHCenter
-                                spacing: 4
-
-                                ClippedFilledCircularProgress {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    implicitSize: 64
-                                    lineWidth: 4
-                                    enableAnimation: true
-                                    value: Math.max(0, Math.min(1, AiUsage.sevenDaySonnet / 100))
-                                    colPrimary: AiUsage.sevenDaySonnet >= Config.options.sidebar.aiUsage.warningThreshold
-                                        ? Appearance.colors.colError
-                                        : Appearance.colors.colPrimary
-                                    accountForLightBleeding: AiUsage.sevenDaySonnet < Config.options.sidebar.aiUsage.warningThreshold
-
-                                    Item {
-                                        width: 64; height: 64
-                                        StyledText {
-                                            anchors.centerIn: parent
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            font.weight: Font.Medium
-                                            color: Appearance.colors.colOnLayer1
-                                            text: Math.round(AiUsage.sevenDaySonnet) + "%"
-                                        }
-                                    }
-                                }
-
-                                StyledText {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    font.weight: Font.Medium
-                                    color: Appearance.colors.colOnLayer1
-                                    text: Translation.tr("Week · Sonnet")
-                                }
-
-                                StyledText {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    font.pixelSize: Appearance.font.pixelSize.smaller
-                                    color: Appearance.colors.colSubtext
-                                    text: AiUsage.timeUntil(AiUsage.sevenDaySonnetReset)
-                                }
+                                valuePercent: AiUsage.sevenDaySonnet
+                                title: Translation.tr("Week · Sonnet")
+                                subtitle: AiUsage.timeUntil(AiUsage.sevenDaySonnetReset)
                             }
                         }
                     }
-
+                    
                     // ── Divider between quota and spend ──────────────────────
                     Rectangle {
                         visible: AiUsage.claudeAvailable
@@ -346,13 +161,12 @@ Item {
                         height: 1
                         color: Appearance.colors.colLayer3
                     }
-
+                    
                     // ── Spend section ────────────────────────────────────────
                     ColumnLayout {
-                        visible: !claudeCard.bothFail
                         Layout.fillWidth: true
                         spacing: 6
-
+                        
                         // Loading indicator for spend
                         StyledText {
                             visible: AiUsage.spentLoading && !AiUsage.spentAvailable
@@ -361,7 +175,7 @@ Item {
                             font.pixelSize: Appearance.font.pixelSize.small
                             text: Translation.tr("Loading spend…")
                         }
-
+                        
                         // ccusage-missing install hint
                         StyledText {
                             visible: !AiUsage.spentLoading
@@ -373,839 +187,184 @@ Item {
                             font.pixelSize: Appearance.font.pixelSize.small
                             text: Translation.tr("Spend unavailable. Install ccusage: yay -S ccusage (npx fallback used automatically)")
                         }
-
-                        // Spend table: label | cost | tokens, columns aligned so
-                        // each value sits under its own column. Rows without a
-                        // token figure leave the tokens cell empty.
-                        ColumnLayout {
+                        
+                        // Spend Table
+                        AiSpendTable {
                             visible: AiUsage.spentAvailable
-                            Layout.fillWidth: true
-                            spacing: 4
-
-                            StyledText {
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                font.weight: Font.Medium
-                                color: Appearance.colors.colOnLayer1
-                                text: Translation.tr("Estimated cost (API rate)")
-                            }
-
-                            GridLayout {
-                                Layout.fillWidth: true
-                                columns: 3
-                                columnSpacing: 16
-                                rowSpacing: 4
-
-                                // ── Today ─────────────────────────────────────
-                                StyledText {
-                                    Layout.fillWidth: true
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    color: Appearance.colors.colSubtext
-                                    text: Translation.tr("Today")
-                                }
-                                StyledText {
-                                    Layout.alignment: Qt.AlignRight
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    color: Appearance.colors.colOnLayer1
-                                    text: root.formatCost(AiUsage.spentTodayCost)
-                                }
-                                StyledText {
-                                    Layout.alignment: Qt.AlignRight
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    color: Appearance.colors.colSubtext
-                                    text: root.formatTokens(AiUsage.spentTodayInputTokens) + " in · "
-                                        + root.formatTokens(AiUsage.spentTodayOutputTokens) + " out · "
-                                        + root.formatTokens(AiUsage.spentTodayCacheTokens) + " cache"
-                                }
-
-                                // ── This week ─────────────────────────────────
-                                StyledText {
-                                    Layout.fillWidth: true
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    color: Appearance.colors.colSubtext
-                                    text: Translation.tr("This week")
-                                }
-                                StyledText {
-                                    Layout.alignment: Qt.AlignRight
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    color: Appearance.colors.colOnLayer1
-                                    text: root.formatCost(AiUsage.spentWeekCost)
-                                }
-                                StyledText { text: "" }
-
-                                // ── This month ────────────────────────────────
-                                StyledText {
-                                    Layout.fillWidth: true
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    color: Appearance.colors.colSubtext
-                                    text: Translation.tr("This month")
-                                }
-                                StyledText {
-                                    Layout.alignment: Qt.AlignRight
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    color: Appearance.colors.colOnLayer1
-                                    text: root.formatCost(AiUsage.spentMonthCost)
-                                }
-                                StyledText { text: "" }
-                            }
+                            todayCost: AiUsage.spentTodayCost
+                            todayTokensText: root.formatTokens(AiUsage.spentTodayInputTokens) + " in · "
+                                + root.formatTokens(AiUsage.spentTodayOutputTokens) + " out · "
+                                + root.formatTokens(AiUsage.spentTodayCacheTokens) + " cache"
+                            weekCost: AiUsage.spentWeekCost
+                            monthCost: AiUsage.spentMonthCost
                         }
                     }
                 }
             }
 
             // ── OpenCode card ────────────────────────────────────────────────
-            Rectangle {
+            AiProviderCard {
                 id: opencodeCard
                 visible: Config.options.sidebar.aiUsage.providers.opencode.enable
-                Layout.fillWidth: true
-                Layout.leftMargin: 12
-                Layout.rightMargin: 12
-                radius: Appearance.rounding.normal
-                color: Appearance.colors.colLayer2
-                implicitHeight: visible ? opencodeCardColumn.implicitHeight + 24 : 0
-
-                property bool dataOk: OpenCodeUsage.available && !OpenCodeUsage.error
-
+                title: "OpenCode"
+                iconName: "code_blocks"
+                service: OpenCodeUsage
+                accentColor: Appearance.colors.colPrimary
+                
+                isLoading: OpenCodeUsage.usageLoading
+                isAvailable: OpenCodeUsage.available && !OpenCodeUsage.error
+                errorMessage: OpenCodeUsage.error.length > 0 ? OpenCodeUsage.error : Translation.tr("Usage unavailable")
+                
                 ColumnLayout {
-                    id: opencodeCardColumn
-                    anchors {
-                        left: parent.left; right: parent.right
-                        top: parent.top
-                        margins: 12
-                    }
-                    spacing: 10
-
-                    // ── Card header ──────────────────────────────────────────
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 8
-
-                        MaterialSymbol {
-                            text: "code_blocks"
-                            iconSize: Appearance.font.pixelSize.larger
-                            color: Appearance.colors.colPrimary
-                        }
-
-                        StyledText {
-                            Layout.fillWidth: true
-                            font.pixelSize: Appearance.font.pixelSize.large
-                            font.weight: Font.Medium
-                            color: Appearance.colors.colOnLayer1
-                            text: "OpenCode"
-                        }
-
-                        MouseArea {
-                            id: opencodeRefreshArea
-                            implicitWidth: 28
-                            implicitHeight: 28
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: OpenCodeUsage.refresh()
-
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: Appearance.rounding.small
-                                color: opencodeRefreshArea.containsMouse
-                                    ? Appearance.colors.colLayer3
-                                    : "transparent"
-                            }
-
-                            MaterialSymbol {
-                                anchors.centerIn: parent
-                                text: "refresh"
-                                iconSize: Appearance.font.pixelSize.larger
-                                color: Appearance.colors.colOnLayer1
-                            }
-                        }
-                    }
-
-                    // ── Loading state ────────────────────────────────────────
+                    Layout.fillWidth: true
+                    spacing: 8
+                    
                     StyledText {
-                        visible: OpenCodeUsage.usageLoading && !OpenCodeUsage.available
-                        Layout.alignment: Qt.AlignHCenter
-                        color: Appearance.colors.colSubtext
                         font.pixelSize: Appearance.font.pixelSize.small
-                        text: Translation.tr("Loading…")
+                        font.weight: Font.Medium
+                        color: Appearance.colors.colOnLayer1
+                        text: Translation.tr("Estimated API-rate cost")
                     }
-
-                    // ── Error / unavailable state ────────────────────────────
-                    StyledText {
-                        visible: !OpenCodeUsage.usageLoading && !OpenCodeUsage.available
-                        Layout.fillWidth: true
-                        wrapMode: Text.WordWrap
-                        color: Appearance.colors.colSubtext
-                        font.pixelSize: Appearance.font.pixelSize.small
-                        text: OpenCodeUsage.error.length > 0
-                            ? OpenCodeUsage.error
-                            : Translation.tr("Usage unavailable")
+                    
+                    AiOpenCodePeriodBlock {
+                        title: Translation.tr("Today")
+                        rows: OpenCodeUsage.todayRows
                     }
-
-                    // ── Spend section ────────────────────────────────────────
-                    // Cost shown as estimated API-rate cost via models.dev pricing.
-                    ColumnLayout {
-                        visible: opencodeCard.dataOk
+                    
+                    Rectangle {
+                        visible: OpenCodeUsage.todayRows.length > 0 && OpenCodeUsage.weekRows.length > 0
                         Layout.fillWidth: true
-                        spacing: 6
-
-                        StyledText {
-                            font.pixelSize: Appearance.font.pixelSize.small
-                            font.weight: Font.Medium
-                            color: Appearance.colors.colOnLayer1
-                            text: Translation.tr("Estimated API-rate cost")
-                        }
-
-                        // Per-provider breakdown by period
-                        // Today block
-                        ColumnLayout {
-                            visible: OpenCodeUsage.todayRows.length > 0
-                            Layout.fillWidth: true
-                            spacing: 2
-
-                            StyledText {
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                font.weight: Font.Medium
-                                color: Appearance.colors.colSubtext
-                                text: Translation.tr("Today")
-                            }
-
-                            Repeater {
-                                model: OpenCodeUsage.todayRows
-                                delegate: ColumnLayout {
-                                    required property var modelData
-                                    Layout.fillWidth: true
-                                    spacing: 1
-
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 8
-
-                                        StyledText {
-                                            Layout.fillWidth: true
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            color: Appearance.colors.colSubtext
-                                            text: (modelData.model ?? "unknown")
-                                                  + (modelData.provider ? " · " + modelData.provider : "")
-                                            elide: Text.ElideRight
-                                        }
-                                        StyledText {
-                                            Layout.alignment: Qt.AlignRight
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            color: Appearance.colors.colOnLayer1
-                                            text: modelData.estimatedCost != null
-                                                ? root.formatCost(modelData.estimatedCost)
-                                                : "—"
-                                        }
-                                        StyledText {
-                                            Layout.alignment: Qt.AlignRight
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            color: Appearance.colors.colSubtext
-                                            text: root.formatTokens(modelData.tokens ?? 0)
-                                                   + " " + Translation.tr("tokens")
-                                        }
-                                    }
-                                    RowLayout {
-                                        visible: (modelData.tok_input !== undefined) || (modelData.tok_output !== undefined)
-                                        Layout.fillWidth: true
-                                        spacing: 4
-
-                                        Item { Layout.fillWidth: true }
-                                        StyledText {
-                                            font.pixelSize: Appearance.font.pixelSize.smaller
-                                            color: Appearance.colors.colSubtext
-                                            text: root.formatTokens(modelData.tok_input ?? 0) + " in · "
-                                                + root.formatTokens((modelData.tok_output ?? 0) + (modelData.tok_reasoning ?? 0)) + " out · "
-                                                + root.formatTokens((modelData.tok_cache_read ?? 0) + (modelData.tok_cache_write ?? 0)) + " cache"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Divider between today and week when both visible
-                        Rectangle {
-                            visible: OpenCodeUsage.todayRows.length > 0
-                                  && OpenCodeUsage.weekRows.length > 0
-                            Layout.fillWidth: true
-                            height: 1
-                            color: Appearance.colors.colLayer3
-                        }
-
-                        // Week block
-                        ColumnLayout {
-                            visible: OpenCodeUsage.weekRows.length > 0
-                            Layout.fillWidth: true
-                            spacing: 2
-
-                            StyledText {
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                font.weight: Font.Medium
-                                color: Appearance.colors.colSubtext
-                                text: Translation.tr("This week")
-                            }
-
-                            Repeater {
-                                model: OpenCodeUsage.weekRows
-                                delegate: ColumnLayout {
-                                    required property var modelData
-                                    Layout.fillWidth: true
-                                    spacing: 1
-
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 8
-
-                                        StyledText {
-                                            Layout.fillWidth: true
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            color: Appearance.colors.colSubtext
-                                            text: (modelData.model ?? "unknown")
-                                                  + (modelData.provider ? " · " + modelData.provider : "")
-                                            elide: Text.ElideRight
-                                        }
-                                        StyledText {
-                                            Layout.alignment: Qt.AlignRight
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            color: Appearance.colors.colOnLayer1
-                                            text: modelData.estimatedCost != null
-                                                ? root.formatCost(modelData.estimatedCost)
-                                                : "—"
-                                        }
-                                        StyledText {
-                                            Layout.alignment: Qt.AlignRight
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            color: Appearance.colors.colSubtext
-                                            text: root.formatTokens(modelData.tokens ?? 0)
-                                                   + " " + Translation.tr("tokens")
-                                        }
-                                    }
-                                    RowLayout {
-                                        visible: (modelData.tok_input !== undefined) || (modelData.tok_output !== undefined)
-                                        Layout.fillWidth: true
-                                        spacing: 4
-
-                                        Item { Layout.fillWidth: true }
-                                        StyledText {
-                                            font.pixelSize: Appearance.font.pixelSize.smaller
-                                            color: Appearance.colors.colSubtext
-                                            text: root.formatTokens(modelData.tok_input ?? 0) + " in · "
-                                                + root.formatTokens((modelData.tok_output ?? 0) + (modelData.tok_reasoning ?? 0)) + " out · "
-                                                + root.formatTokens((modelData.tok_cache_read ?? 0) + (modelData.tok_cache_write ?? 0)) + " cache"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Divider between week and month when both visible
-                        Rectangle {
-                            visible: OpenCodeUsage.weekRows.length > 0
-                                  && OpenCodeUsage.monthRows.length > 0
-                            Layout.fillWidth: true
-                            height: 1
-                            color: Appearance.colors.colLayer3
-                        }
-
-                        // Month block
-                        ColumnLayout {
-                            visible: OpenCodeUsage.monthRows.length > 0
-                            Layout.fillWidth: true
-                            spacing: 2
-
-                            StyledText {
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                font.weight: Font.Medium
-                                color: Appearance.colors.colSubtext
-                                text: Translation.tr("This month")
-                            }
-
-                            Repeater {
-                                model: OpenCodeUsage.monthRows
-                                delegate: ColumnLayout {
-                                    required property var modelData
-                                    Layout.fillWidth: true
-                                    spacing: 1
-
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 8
-
-                                        StyledText {
-                                            Layout.fillWidth: true
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            color: Appearance.colors.colSubtext
-                                            text: (modelData.model ?? "unknown")
-                                                  + (modelData.provider ? " · " + modelData.provider : "")
-                                            elide: Text.ElideRight
-                                        }
-                                        StyledText {
-                                            Layout.alignment: Qt.AlignRight
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            color: Appearance.colors.colOnLayer1
-                                            text: modelData.estimatedCost != null
-                                                ? root.formatCost(modelData.estimatedCost)
-                                                : "—"
-                                        }
-                                        StyledText {
-                                            Layout.alignment: Qt.AlignRight
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            color: Appearance.colors.colSubtext
-                                            text: root.formatTokens(modelData.tokens ?? 0)
-                                                   + " " + Translation.tr("tokens")
-                                        }
-                                    }
-                                    RowLayout {
-                                        visible: (modelData.tok_input !== undefined) || (modelData.tok_output !== undefined)
-                                        Layout.fillWidth: true
-                                        spacing: 4
-
-                                        Item { Layout.fillWidth: true }
-                                        StyledText {
-                                            font.pixelSize: Appearance.font.pixelSize.smaller
-                                            color: Appearance.colors.colSubtext
-                                            text: root.formatTokens(modelData.tok_input ?? 0) + " in · "
-                                                + root.formatTokens((modelData.tok_output ?? 0) + (modelData.tok_reasoning ?? 0)) + " out · "
-                                                + root.formatTokens((modelData.tok_cache_read ?? 0) + (modelData.tok_cache_write ?? 0)) + " cache"
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        height: 1
+                        color: Appearance.colors.colLayer3
+                    }
+                    
+                    AiOpenCodePeriodBlock {
+                        title: Translation.tr("This week")
+                        rows: OpenCodeUsage.weekRows
+                    }
+                    
+                    Rectangle {
+                        visible: OpenCodeUsage.weekRows.length > 0 && OpenCodeUsage.monthRows.length > 0
+                        Layout.fillWidth: true
+                        height: 1
+                        color: Appearance.colors.colLayer3
+                    }
+                    
+                    AiOpenCodePeriodBlock {
+                        title: Translation.tr("This month")
+                        rows: OpenCodeUsage.monthRows
                     }
                 }
             }
 
             // ── Codex (OpenAI) card ──────────────────────────────────────────
-            Rectangle {
+            AiProviderCard {
                 id: codexCard
-                // Hidden entirely (Layout.preferredHeight: 0 + visible: false)
-                // when the provider is disabled so it consumes no vertical space.
                 visible: Config.options.sidebar.aiUsage.providers.openai.enable
-                Layout.fillWidth: true
-                Layout.leftMargin: 12
-                Layout.rightMargin: 12
-                radius: Appearance.rounding.normal
-                color: Appearance.colors.colLayer2
-                implicitHeight: visible ? codexCardColumn.implicitHeight + 24 : 0
-
-                property bool dataOk: OpenAiUsage.available && !OpenAiUsage.error
-
+                title: OpenAiUsage.subscriptionType.length > 0
+                    ? "Codex " + OpenAiUsage.subscriptionType.charAt(0).toUpperCase()
+                                 + OpenAiUsage.subscriptionType.slice(1)
+                    : "Codex"
+                iconName: "terminal"
+                service: OpenAiUsage
+                accentColor: Appearance.colors.colPrimary
+                
+                isLoading: OpenAiUsage.usageLoading
+                isAvailable: OpenAiUsage.available && !OpenAiUsage.error
+                errorMessage: OpenAiUsage.error.length > 0 ? OpenAiUsage.error : Translation.tr("Usage unavailable")
+                
                 ColumnLayout {
-                    id: codexCardColumn
-                    anchors {
-                        left: parent.left; right: parent.right
-                        top: parent.top
-                        margins: 12
-                    }
+                    Layout.fillWidth: true
                     spacing: 10
-
-                    // ── Card header ──────────────────────────────────────────
+                    
+                    // Quota gauges row (5h + 7d)
                     RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 8
-
-                        MaterialSymbol {
-                            text: "terminal"
-                            iconSize: Appearance.font.pixelSize.larger
-                            color: Appearance.colors.colPrimary
-                        }
-
-                        StyledText {
-                            Layout.fillWidth: true
-                            font.pixelSize: Appearance.font.pixelSize.large
-                            font.weight: Font.Medium
-                            color: Appearance.colors.colOnLayer1
-                            text: OpenAiUsage.subscriptionType.length > 0
-                                ? "Codex " + OpenAiUsage.subscriptionType.charAt(0).toUpperCase()
-                                           + OpenAiUsage.subscriptionType.slice(1)
-                                : "Codex"
-                        }
-
-                        MouseArea {
-                            id: codexRefreshArea
-                            implicitWidth: 28
-                            implicitHeight: 28
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: OpenAiUsage.refresh()
-
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: Appearance.rounding.small
-                                color: codexRefreshArea.containsMouse
-                                    ? Appearance.colors.colLayer3
-                                    : "transparent"
-                            }
-
-                            MaterialSymbol {
-                                anchors.centerIn: parent
-                                text: "refresh"
-                                iconSize: Appearance.font.pixelSize.larger
-                                color: Appearance.colors.colOnLayer1
-                            }
-                        }
-                    }
-
-                    // ── Loading state ────────────────────────────────────────
-                    StyledText {
-                        visible: OpenAiUsage.usageLoading && !OpenAiUsage.available
-                        Layout.alignment: Qt.AlignHCenter
-                        color: Appearance.colors.colSubtext
-                        font.pixelSize: Appearance.font.pixelSize.small
-                        text: Translation.tr("Loading…")
-                    }
-
-                    // ── Error / unavailable state ────────────────────────────
-                    StyledText {
-                        visible: !OpenAiUsage.usageLoading && !OpenAiUsage.available
-                        Layout.fillWidth: true
-                        wrapMode: Text.WordWrap
-                        color: Appearance.colors.colSubtext
-                        font.pixelSize: Appearance.font.pixelSize.small
-                        text: OpenAiUsage.error.length > 0
-                            ? OpenAiUsage.error
-                            : Translation.tr("Usage unavailable")
-                    }
-
-                    // ── Quota gauges (5h + 7d) ───────────────────────────────
-                    RowLayout {
-                        visible: codexCard.dataOk
                         Layout.fillWidth: true
                         spacing: 20
-
-                        // 5-hour gauge
-                        ColumnLayout {
+                        
+                        AiQuotaGauge {
                             visible: OpenAiUsage.fiveHour >= 0
-                            Layout.alignment: Qt.AlignHCenter
-                            spacing: 4
-
-                            ClippedFilledCircularProgress {
-                                Layout.alignment: Qt.AlignHCenter
-                                implicitSize: 64
-                                lineWidth: 4
-                                enableAnimation: true
-                                value: Math.max(0, Math.min(1, OpenAiUsage.fiveHour / 100))
-                                colPrimary: OpenAiUsage.fiveHour >= Config.options.sidebar.aiUsage.warningThreshold
-                                    ? Appearance.colors.colError
-                                    : Appearance.colors.colPrimary
-                                accountForLightBleeding: OpenAiUsage.fiveHour < Config.options.sidebar.aiUsage.warningThreshold
-
-                                Item {
-                                    width: 64; height: 64
-                                    StyledText {
-                                        anchors.centerIn: parent
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        font.weight: Font.Medium
-                                        color: Appearance.colors.colOnLayer1
-                                        text: Math.round(OpenAiUsage.fiveHour) + "%"
-                                    }
-                                }
-                            }
-
-                            StyledText {
-                                Layout.alignment: Qt.AlignHCenter
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                font.weight: Font.Medium
-                                color: Appearance.colors.colOnLayer1
-                                text: Translation.tr("Session (5h)")
-                            }
-
-                            StyledText {
-                                Layout.alignment: Qt.AlignHCenter
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                color: Appearance.colors.colSubtext
-                                text: OpenAiUsage.timeUntil(OpenAiUsage.fiveHourReset)
-                            }
+                            valuePercent: OpenAiUsage.fiveHour
+                            title: Translation.tr("Session (5h)")
+                            subtitle: OpenAiUsage.timeUntil(OpenAiUsage.fiveHourReset)
                         }
-
-                        // 7-day gauge
-                        ColumnLayout {
+                        
+                        AiQuotaGauge {
                             visible: OpenAiUsage.sevenDay >= 0
-                            Layout.alignment: Qt.AlignHCenter
-                            spacing: 4
-
-                            ClippedFilledCircularProgress {
-                                Layout.alignment: Qt.AlignHCenter
-                                implicitSize: 64
-                                lineWidth: 4
-                                enableAnimation: true
-                                value: Math.max(0, Math.min(1, OpenAiUsage.sevenDay / 100))
-                                colPrimary: OpenAiUsage.sevenDay >= Config.options.sidebar.aiUsage.warningThreshold
-                                    ? Appearance.colors.colError
-                                    : Appearance.colors.colPrimary
-                                accountForLightBleeding: OpenAiUsage.sevenDay < Config.options.sidebar.aiUsage.warningThreshold
-
-                                Item {
-                                    width: 64; height: 64
-                                    StyledText {
-                                        anchors.centerIn: parent
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        font.weight: Font.Medium
-                                        color: Appearance.colors.colOnLayer1
-                                        text: Math.round(OpenAiUsage.sevenDay) + "%"
-                                    }
-                                }
-                            }
-
-                            StyledText {
-                                Layout.alignment: Qt.AlignHCenter
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                font.weight: Font.Medium
-                                color: Appearance.colors.colOnLayer1
-                                text: Translation.tr("Week · All")
-                            }
-
-                            StyledText {
-                                Layout.alignment: Qt.AlignHCenter
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                color: Appearance.colors.colSubtext
-                                text: OpenAiUsage.timeUntil(OpenAiUsage.sevenDayReset)
-                            }
+                            valuePercent: OpenAiUsage.sevenDay
+                            title: Translation.tr("Week · All")
+                            subtitle: OpenAiUsage.timeUntil(OpenAiUsage.sevenDayReset)
                         }
                     }
-
-                    // ── Divider ──────────────────────────────────────────────
+                    
+                    // Divider
                     Rectangle {
-                        visible: codexCard.dataOk
                         Layout.fillWidth: true
                         height: 1
                         color: Appearance.colors.colLayer3
                     }
-
-                    // ── Estimated API-rate cost section ──────────────────────
-                    // Label explicitly says "estimated API-rate cost" per REQ-OPENAI-05.
-                    ColumnLayout {
-                        visible: codexCard.dataOk
-                        Layout.fillWidth: true
-                        spacing: 6
-
-                        StyledText {
-                            font.pixelSize: Appearance.font.pixelSize.small
-                            font.weight: Font.Medium
-                            color: Appearance.colors.colOnLayer1
-                            text: Translation.tr("Estimated API-rate cost")
-                        }
-
-                        GridLayout {
-                            Layout.fillWidth: true
-                            columns: 3
-                            columnSpacing: 16
-                            rowSpacing: 4
-
-                            // Today
-                            StyledText {
-                                Layout.fillWidth: true
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                color: Appearance.colors.colSubtext
-                                text: Translation.tr("Today")
-                            }
-                            StyledText {
-                                Layout.alignment: Qt.AlignRight
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                color: Appearance.colors.colOnLayer1
-                                text: root.formatCost(OpenAiUsage.spentTodayCost)
-                            }
-                            StyledText {
-                                Layout.alignment: Qt.AlignRight
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                color: Appearance.colors.colSubtext
-                                text: root.formatTokens(OpenAiUsage.spentTodayInputTokens) + " in · "
-                                    + root.formatTokens(OpenAiUsage.spentTodayOutputTokens) + " out · "
-                                    + root.formatTokens(OpenAiUsage.spentTodayCacheTokens) + " cache"
-                            }
-
-                            // This week
-                            StyledText {
-                                Layout.fillWidth: true
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                color: Appearance.colors.colSubtext
-                                text: Translation.tr("This week")
-                            }
-                            StyledText {
-                                Layout.alignment: Qt.AlignRight
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                color: Appearance.colors.colOnLayer1
-                                text: root.formatCost(OpenAiUsage.spentWeekCost)
-                            }
-                            StyledText {
-                                Layout.alignment: Qt.AlignRight
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                color: Appearance.colors.colSubtext
-                                text: root.formatTokens(OpenAiUsage.spentWeekTokens)
-                                       + " " + Translation.tr("tokens")
-                            }
-                        }
+                    
+                    // Spend Table
+                    AiSpendTable {
+                        title: Translation.tr("Estimated API-rate cost")
+                        todayCost: OpenAiUsage.spentTodayCost
+                        todayTokensText: root.formatTokens(OpenAiUsage.spentTodayInputTokens) + " in · "
+                            + root.formatTokens(OpenAiUsage.spentTodayOutputTokens) + " out · "
+                            + root.formatTokens(OpenAiUsage.spentTodayCacheTokens) + " cache"
+                        weekCost: OpenAiUsage.spentWeekCost
+                        weekTokensText: root.formatTokens(OpenAiUsage.spentWeekTokens) + " " + Translation.tr("tokens")
                     }
                 }
             }
 
             // ── Antigravity card ─────────────────────────────────────────────
-            Rectangle {
+            AiProviderCard {
                 id: antigravityCard
                 visible: Config.options.sidebar.aiUsage.providers.antigravity.enable
-                Layout.fillWidth: true
-                Layout.leftMargin: 12
-                Layout.rightMargin: 12
-                radius: Appearance.rounding.normal
-                color: Appearance.colors.colLayer2
-                implicitHeight: visible ? antigravityCardColumn.implicitHeight + 24 : 0
-
-                property bool dataOk: AntigravityUsage.available && !AntigravityUsage.error
-
+                title: "Antigravity"
+                iconName: "auto_awesome_motion"
+                service: AntigravityUsage
+                accentColor: Appearance.colors.colPrimary
+                
+                isLoading: AntigravityUsage.usageLoading
+                isAvailable: AntigravityUsage.available && !AntigravityUsage.error
+                errorMessage: AntigravityUsage.error.length > 0 ? AntigravityUsage.error : Translation.tr("Quota unavailable")
+                
                 ColumnLayout {
-                    id: antigravityCardColumn
-                    anchors {
-                        left: parent.left; right: parent.right
-                        top: parent.top
-                        margins: 12
-                    }
-                    spacing: 10
-
-                    // ── Card header ──────────────────────────────────────────
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 8
-
-                        MaterialSymbol {
-                            text: "auto_awesome_motion"
-                            iconSize: Appearance.font.pixelSize.larger
-                            color: Appearance.colors.colPrimary
-                        }
-
-                        StyledText {
+                    Layout.fillWidth: true
+                    spacing: 12
+                    
+                    Repeater {
+                        model: AntigravityUsage.groups
+                        
+                        delegate: ColumnLayout {
+                            required property var modelData
                             Layout.fillWidth: true
-                            font.pixelSize: Appearance.font.pixelSize.large
-                            font.weight: Font.Medium
-                            color: Appearance.colors.colOnLayer1
-                            text: "Antigravity"
-                        }
-
-                        MouseArea {
-                            id: agyRefreshArea
-                            implicitWidth: 28
-                            implicitHeight: 28
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: AntigravityUsage.refresh()
-
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: Appearance.rounding.small
-                                color: agyRefreshArea.containsMouse
-                                    ? Appearance.colors.colLayer3
-                                    : "transparent"
-                            }
-
-                            MaterialSymbol {
-                                anchors.centerIn: parent
-                                text: "refresh"
-                                iconSize: Appearance.font.pixelSize.larger
-                                color: Appearance.colors.colOnLayer1
-                            }
-                        }
-                    }
-
-                    // ── Loading state ────────────────────────────────────────
-                    StyledText {
-                        visible: AntigravityUsage.usageLoading && !AntigravityUsage.available
-                        Layout.alignment: Qt.AlignHCenter
-                        color: Appearance.colors.colSubtext
-                        font.pixelSize: Appearance.font.pixelSize.small
-                        text: Translation.tr("Loading…")
-                    }
-
-                    // ── Error / unavailable state ────────────────────────────
-                    StyledText {
-                        visible: !AntigravityUsage.usageLoading && !AntigravityUsage.available
-                        Layout.fillWidth: true
-                        wrapMode: Text.WordWrap
-                        color: Appearance.colors.colSubtext
-                        font.pixelSize: Appearance.font.pixelSize.small
-                        text: AntigravityUsage.error.length > 0
-                            ? AntigravityUsage.error
-                            : Translation.tr("Quota unavailable")
-                    }
-
-                    // ── Grouped quota gauges (weekly + 5h per group) ────────────
-                    // NO token count, NO cost block (per REQ-AGY-05 / ADR-7).
-                    // Server provides grouping via retrieveUserQuotaSummary.
-                    // Each group renders as: group name label + two circular gauges.
-                    ColumnLayout {
-                        visible: antigravityCard.dataOk
-                        Layout.fillWidth: true
-                        spacing: 12
-
-                        Repeater {
-                            model: AntigravityUsage.groups
-
-                            delegate: ColumnLayout {
-                                required property var modelData
+                            spacing: 8
+                            
+                            StyledText {
                                 Layout.fillWidth: true
-                                spacing: 8
-
-                                // Group name subheading
-                                StyledText {
-                                    Layout.fillWidth: true
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    font.weight: Font.Medium
-                                    color: Appearance.colors.colOnLayer1
-                                    text: modelData.name
-                                    elide: Text.ElideRight
-                                }
-
-                                // Bucket gauges row (Weekly + 5h)
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 20
-
-                                    Repeater {
-                                        model: modelData.buckets
-
-                                        delegate: ColumnLayout {
-                                            required property var modelData
-                                            Layout.alignment: Qt.AlignHCenter
-                                            spacing: 4
-
-                                            ClippedFilledCircularProgress {
-                                                Layout.alignment: Qt.AlignHCenter
-                                                implicitSize: 64
-                                                lineWidth: 4
-                                                enableAnimation: true
-                                                value: Math.max(0, Math.min(1, modelData.usedPercent / 100))
-                                                colPrimary: modelData.usedPercent >= Config.options.sidebar.aiUsage.warningThreshold
-                                                    ? Appearance.colors.colError
-                                                    : Appearance.colors.colPrimary
-                                                accountForLightBleeding: modelData.usedPercent < Config.options.sidebar.aiUsage.warningThreshold
-
-                                                Item {
-                                                    width: 64; height: 64
-                                                    StyledText {
-                                                        anchors.centerIn: parent
-                                                        font.pixelSize: Appearance.font.pixelSize.small
-                                                        font.weight: Font.Medium
-                                                        color: Appearance.colors.colOnLayer1
-                                                        text: (modelData.usedPercent > 0 && modelData.usedPercent < 0.5) 
-                                                                ? "<1%" 
-                                                                : Math.round(modelData.usedPercent) + "%"
-                                                    }
-                                                }
-                                            }
-
-                                            StyledText {
-                                                Layout.alignment: Qt.AlignHCenter
-                                                font.pixelSize: Appearance.font.pixelSize.small
-                                                font.weight: Font.Medium
-                                                color: Appearance.colors.colOnLayer1
-                                                text: modelData.displayName
-                                            }
-
-                                            StyledText {
-                                                Layout.alignment: Qt.AlignHCenter
-                                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                                color: Appearance.colors.colSubtext
-                                                text: modelData.resetTime
-                                                    ? AntigravityUsage.timeUntil(new Date(modelData.resetTime).getTime())
-                                                    : "—"
-                                            }
-                                        }
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                font.weight: Font.Medium
+                                color: Appearance.colors.colOnLayer1
+                                text: modelData.name
+                                elide: Text.ElideRight
+                            }
+                            
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 20
+                                
+                                Repeater {
+                                    model: modelData.buckets
+                                    
+                                    delegate: AiQuotaGauge {
+                                        required property var modelData
+                                        valuePercent: modelData.usedPercent
+                                        title: modelData.displayName
+                                        subtitle: modelData.resetTime
+                                            ? AntigravityUsage.timeUntil(new Date(modelData.resetTime).getTime())
+                                            : "—"
                                     }
                                 }
                             }
