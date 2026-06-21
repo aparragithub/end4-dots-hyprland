@@ -121,9 +121,9 @@ Singleton {
             "q_today=\"SELECT json_extract(model,'$.providerID') AS provider, ROUND(SUM(cost),6) AS cost, CAST(SUM(tokens_input+tokens_output+tokens_reasoning) AS INTEGER) AS tokens FROM session WHERE model IS NOT NULL AND time_created >= $t0 GROUP BY provider ORDER BY cost DESC\"; " +
             "q_week=\"SELECT json_extract(model,'$.providerID') AS provider, ROUND(SUM(cost),6) AS cost, CAST(SUM(tokens_input+tokens_output+tokens_reasoning) AS INTEGER) AS tokens FROM session WHERE model IS NOT NULL AND time_created >= $w0 GROUP BY provider ORDER BY cost DESC\"; " +
             "q_month=\"SELECT json_extract(model,'$.providerID') AS provider, ROUND(SUM(cost),6) AS cost, CAST(SUM(tokens_input+tokens_output+tokens_reasoning) AS INTEGER) AS tokens FROM session WHERE model IS NOT NULL AND time_created >= $m0 GROUP BY provider ORDER BY cost DESC\"; " +
-            "today_json=$(sqlite3 -json \"file:${db}?mode=ro\" \"$q_today\" 2>/dev/null || echo '[]'); " +
-            "week_json=$(sqlite3  -json \"file:${db}?mode=ro\" \"$q_week\"  2>/dev/null || echo '[]'); " +
-            "month_json=$(sqlite3 -json \"file:${db}?mode=ro\" \"$q_month\" 2>/dev/null || echo '[]'); " +
+            "today_json=$(sqlite3 -json \"file:${db}?mode=ro\" \"$q_today\" 2>/dev/null); today_json=${today_json:-[]}; " +
+            "week_json=$(sqlite3  -json \"file:${db}?mode=ro\" \"$q_week\"  2>/dev/null); week_json=${week_json:-[]}; " +
+            "month_json=$(sqlite3 -json \"file:${db}?mode=ro\" \"$q_month\" 2>/dev/null); month_json=${month_json:-[]}; " +
             "printf '{\"today\":%s,\"week\":%s,\"month\":%s}' \"$today_json\" \"$week_json\" \"$month_json\""
         ]
         stdout: StdioCollector {
