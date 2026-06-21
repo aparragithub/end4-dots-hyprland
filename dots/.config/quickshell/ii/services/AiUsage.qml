@@ -200,10 +200,26 @@ Singleton {
         for (const row of rows) {
             const p = row.period ?? row.date;
             if (!p) continue;
-            const cost   = row.totalCost   ?? row.cost   ?? 0;
-            const tokens = row.totalTokens ?? row.tokens ?? 0;
             const d = new Date(`${p}T00:00:00`);
             if (isNaN(d.getTime())) continue;
+
+            // Claude-only: ccusage also scans Codex/other tool logs, so sum just
+            // the per-model breakdowns whose modelName starts with "claude". This
+            // keeps non-Claude spend (e.g. gpt-* from Codex) out of these figures.
+            // Falls back to the row total only when no breakdown is present.
+            let cost = 0, tokens = 0;
+            const bd = row.modelBreakdowns ?? row.modelBreakdown ?? null;
+            if (Array.isArray(bd) && bd.length > 0) {
+                for (const mb of bd) {
+                    if (!String(mb.modelName ?? "").startsWith("claude")) continue;
+                    cost   += mb.cost ?? 0;
+                    tokens += (mb.inputTokens ?? 0) + (mb.outputTokens ?? 0)
+                            + (mb.cacheCreationTokens ?? 0) + (mb.cacheReadTokens ?? 0);
+                }
+            } else {
+                cost   = row.totalCost   ?? row.cost   ?? 0;
+                tokens = row.totalTokens ?? row.tokens ?? 0;
+            }
 
             if (p === todayStr) {
                 todayCost   += cost;
