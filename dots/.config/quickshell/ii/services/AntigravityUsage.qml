@@ -105,8 +105,8 @@ Singleton {
         }
 
         root.groups       = result;
-        root.available    = true;
-        root.error        = "";
+        root.available    = result.length > 0;
+        root.error        = result.length > 0 ? "" : "unavailable (empty response)";
         root.usageLoading = false;
     }
 

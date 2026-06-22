@@ -747,6 +747,7 @@
   "More Internet settings": "Más ajustes de Internet",
   "Utility buttons": "Botones de utilidad",
   "AI Usage": "Uso de IA",
+  "No AI provider is enabled. Go to Settings → Services to activate one.": "Ninguna IA está activada. Andá a Ajustes → Servicios para activar una.",
   "Usage data unavailable. Check your Claude token and that Node.js is installed.": "Datos de uso no disponibles. Verifica tu token de Claude y que Node.js esté instalado.",
   "Loading quota…": "Cargando cuota…",
   "Quota unavailable": "Cuota no disponible",

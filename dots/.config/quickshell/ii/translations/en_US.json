@@ -613,6 +613,7 @@
   "Pin": "Pin",
   "Unpin": "Unpin",
   "AI Usage": "AI Usage",
+  "No AI provider is enabled. Go to Settings → Services to activate one.": "No AI provider is enabled. Go to Settings → Services to activate one.",
   "Loading quota…": "Loading quota…",
   "Loading spend…": "Loading spend…",
   "Quota unavailable": "Quota unavailable",

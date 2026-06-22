@@ -26,6 +26,13 @@ Item {
     // start as soon as the sidebar opens, regardless of the active tab.
     property bool active: SwipeView.view ? SwipeView.isCurrentItem : visible
 
+    // Whether at least one AI provider is enabled in config
+    readonly property bool anyProviderEnabled:
+        Config.options.sidebar.aiUsage.providers.claude.enable
+        || Config.options.sidebar.aiUsage.providers.openai.enable
+        || Config.options.sidebar.aiUsage.providers.antigravity.enable
+        || Config.options.sidebar.aiUsage.providers.opencode.enable
+
     // Fan-out tabVisible to all four provider services. Each service self-gates
     // on its own enable flag, so setting tabVisible on a disabled service is safe.
     onActiveChanged: {
@@ -73,9 +80,23 @@ Item {
             // ── Padding top ──────────────────────────────────────────────────
             Item { Layout.preferredHeight: 4 }
 
+            // ── No providers enabled message ─────────────────────────────────
+
+            StyledText {
+                visible: !root.anyProviderEnabled
+                Layout.fillWidth: true
+                Layout.leftMargin: 12
+                Layout.rightMargin: 12
+                wrapMode: Text.WordWrap
+                color: Appearance.colors.colSubtext
+                font.pixelSize: Appearance.font.pixelSize.normal
+                text: Translation.tr("No AI provider is enabled. Go to Settings → Services to activate one.")
+            }
+
             // ── Claude card ──────────────────────────────────────────────────
             AiProviderCard {
                 id: claudeCard
+                visible: Config.options.sidebar.aiUsage.providers.claude.enable
                 title: AiUsage.subscriptionType.length > 0
                     ? "Claude " + AiUsage.subscriptionType.charAt(0).toUpperCase()
                                  + AiUsage.subscriptionType.slice(1)
