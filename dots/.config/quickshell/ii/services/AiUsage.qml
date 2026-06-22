@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 import qs.modules.common
+import qs.modules.common.functions
 
 /**
  * AI provider usage service — quota (remaining) and spend.
@@ -97,6 +98,7 @@ Singleton {
         DateTime.time; // reactivity dependency
         if (!epochMs) return "—";
         let diff = Math.floor((epochMs - Date.now()) / 1000);
+        if (isNaN(diff)) return "—";
         if (diff <= 0) return Translation.tr("now");
         const d = Math.floor(diff / 86400);
         diff %= 86400;
@@ -137,25 +139,7 @@ Singleton {
         id: quotaFetcher
         // Read token from credentials file, then call the usage endpoint.
         // Adapted verbatim from end-4/dots-hyprland PR #3468 ClaudeUsage.qml.
-        command: [
-            "bash", "-c",
-            // Point 4: guard credentials file existence before running jq
-            "creds=\"$HOME/.claude/.credentials.json\"; " +
-            "if [ ! -f \"$creds\" ]; then " +
-            "  echo '{\"error\":\"credentials file missing\"}'; exit 0; " +
-            "fi; " +
-            "tok=$(jq -r '.claudeAiOauth.accessToken' \"$creds\" 2>/dev/null); " +
-            "sub=$(jq -r '.claudeAiOauth.subscriptionType' \"$creds\" 2>/dev/null); " +
-            "if [ -z \"$tok\" ] || [ \"$tok\" = null ]; then " +
-            "  echo '{\"error\":\"no Claude token\"}'; exit 0; " +
-            "fi; " +
-            "curl -s --max-time 10 " +
-            "-H \"Authorization: Bearer $tok\" " +
-            "-H \"anthropic-beta: oauth-2025-04-20\" " +
-            "-H \"anthropic-version: 2023-06-01\" " +
-            "https://api.anthropic.com/api/oauth/usage " +
-            "| jq -c --arg sub \"$sub\" '. + {subscriptionType:$sub}'"
-        ]
+        command: ["bash", FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/claude-quota.sh`)]
         stdout: StdioCollector {
             onStreamFinished: {
                 root.quotaLoading = false;

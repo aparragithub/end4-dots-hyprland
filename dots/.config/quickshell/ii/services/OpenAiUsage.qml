@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 import qs.modules.common
+import qs.modules.common.functions
 
 /**
  * Codex (OpenAI) usage service — quota and estimated API-rate cost.
@@ -81,6 +82,7 @@ Singleton {
         DateTime.time;
         if (!epochMs) return "—";
         let diff = Math.floor((epochMs - Date.now()) / 1000);
+        if (isNaN(diff)) return "—";
         if (diff <= 0) return Translation.tr("now");
         const d = Math.floor(diff / 86400);
         diff %= 86400;
@@ -171,19 +173,7 @@ Singleton {
         //
         // jq path confirmed 2026-06-20: total_token_usage lives under
         // payload.info.total_token_usage (payload.total_token_usage is always null).
-        command: [
-            "bash", "-c",
-            "base=\"$HOME/.codex/sessions\"; " +
-            "f=$(find \"$base\" -type f -name 'rollout-*.jsonl' -printf '%T@ %p\\n' 2>/dev/null | sort -nr | head -1 | cut -d' ' -f2-); " +
-            "if [ -z \"$f\" ]; then echo '{\"error\":\"no codex sessions\"}'; exit 0; fi; " +
-            "last=$(grep -F '\"type\":\"token_count\"' \"$f\" | tail -1); " +
-            "if [ -z \"$last\" ]; then echo '{\"error\":\"no usage yet\"}'; exit 0; fi; " +
-            "echo \"$last\" | jq -c '{" +
-            "rate_limits: .payload.rate_limits, " +
-            "session_tokens: .payload.info.total_token_usage, " +
-            "model_id: (.payload.info.model_id // .payload.model_id // \"gpt-5-codex\")" +
-            "}'"
-        ]
+        command: ["bash", FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/openai-usage.sh`)]
         stdout: StdioCollector {
             onStreamFinished: {
                 root.usageLoading = false;
@@ -273,16 +263,7 @@ Singleton {
         // Enumerate all rollout files, take each file's last token_count event,
         // extract date (from YYYY/MM/DD path segment) and total_tokens.
         // Uses payload.info.total_token_usage (confirmed path).
-        command: [
-            "bash", "-c",
-            "base=\"$HOME/.codex/sessions\"; " +
-            "find \"$base\" -type f -name 'rollout-*.jsonl' -printf '%p\\n' 2>/dev/null | " +
-            "while read f; do " +
-            "  d=$(echo \"$f\" | grep -oE '[0-9]{4}/[0-9]{2}/[0-9]{2}' | head -1 | tr / -); " +
-            "  last=$(grep -F '\"type\":\"token_count\"' \"$f\" | tail -1); " +
-            "  [ -n \"$d\" ] && [ -n \"$last\" ] && echo \"$last\" | jq -c --arg date \"$d\" '(.payload.info.total_token_usage // {}) + {date: $date, model_id: (.payload.info.model_id // .payload.model_id // \"gpt-5-codex\")}'; " +
-            "done | jq -s '.'"
-        ]
+        command: ["bash", FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/openai-weekly.sh`)]
         stdout: StdioCollector {
             onStreamFinished: {
                 const raw = text.trim();
