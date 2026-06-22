@@ -264,6 +264,8 @@ Singleton {
                     property bool monochromeIcons: true
                     property int shown: 5
                     property bool showAppIcons: true
+                    property bool showAllAppIcons: false // Show an icon per app in the workspace (horizontal bar only)
+                    property int maxAppIcons: 5 // Max app icons before a "+N" overflow counter
                     property bool alwaysShowNumbers: false
                     property int showNumberDelay: 300 // milliseconds
                     property list<string> numberMap: ["1", "2"] // Characters to show instead of numbers on workspace indicator
