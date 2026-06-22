@@ -33,6 +33,7 @@ Item {
     property int workspaceIndexInGroup: (effectiveActiveWorkspaceId - 1) % root.workspacesShown
 
     property bool showNumbers: false
+    readonly property bool useExpanded: Config.options.bar.workspaces.showAllAppIcons && !root.vertical
     Timer {
         id: showNumbersTimer
         interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)
@@ -81,7 +82,9 @@ Item {
         updateWorkspaceOccupied();
     }
 
-    implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth : (root.workspaceButtonWidth * root.workspacesShown)
+    implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth
+        : (root.useExpanded ? (expandedLoader.item?.implicitWidth ?? (root.workspaceButtonWidth * root.workspacesShown))
+            : (root.workspaceButtonWidth * root.workspacesShown))
     implicitHeight: root.vertical ? (root.workspaceButtonWidth * root.workspacesShown) : Appearance.sizes.barHeight
 
     // Scroll to switch workspaces
@@ -107,6 +110,7 @@ Item {
 
     // Workspaces - background
     Grid {
+        visible: !root.useExpanded
         z: 1
         anchors.centerIn: parent
 
@@ -155,6 +159,7 @@ Item {
 
     // Active workspace
     Rectangle {
+        visible: !root.useExpanded
         z: 2
         // Make active ws indicator, which has a brighter color, smaller to look like it is of the same size as ws occupied highlight
         radius: Appearance.rounding.full
@@ -182,6 +187,7 @@ Item {
 
     // Workspaces - numbers
     Grid {
+        visible: !root.useExpanded
         z: 3
 
         columns: root.vertical ? 1 : root.workspacesShown
@@ -315,6 +321,14 @@ Item {
 
         }
 
+    }
+
+    // Expanded layout: number + all app icons per workspace (horizontal only)
+    Loader {
+        id: expandedLoader
+        active: root.useExpanded
+        anchors.centerIn: parent
+        sourceComponent: WorkspacesExpanded {}
     }
 
 }
