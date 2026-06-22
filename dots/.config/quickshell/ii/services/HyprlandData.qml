@@ -79,6 +79,20 @@ Singleton {
         }, null);
     }
 
+    function appEntriesForWorkspace(workspaceId, maxIcons) {
+        const clients = root.windowList.filter(w => w.workspace.id == workspaceId);
+        const seen = [];
+        for (let i = 0; i < clients.length; i++) {
+            const cls = clients[i]?.class;
+            if (cls && seen.indexOf(cls) === -1) {
+                seen.push(cls);
+            }
+        }
+        const shown = (maxIcons > 0) ? seen.slice(0, maxIcons) : seen;
+        const overflow = Math.max(0, seen.length - shown.length);
+        return { classes: shown, overflow: overflow };
+    }
+
     Component.onCompleted: {
         updateAll();
     }
