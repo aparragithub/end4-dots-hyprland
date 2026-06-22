@@ -150,11 +150,11 @@ Singleton {
             }
 
             property JsonObject apps: JsonObject {
-                property string bluetooth: "kcmshell6 kcm_bluetooth"
+                property string bluetooth: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "blueman-manager" "kcmshell6 kcm_bluetooth"`
                 property string changePassword: "kitty -1 --hold=yes fish -i -c 'passwd'"
-                property string network: "kcmshell6 kcm_networkmanagement"
-                property string manageUser: "kcmshell6 kcm_users"
-                property string networkEthernet: "kcmshell6 kcm_networkmanagement"
+                property string network: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "nm-connection-editor" "kcmshell6 kcm_networkmanagement"`
+                property string manageUser: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "mugshot" "kcmshell6 kcm_users"`
+                property string networkEthernet: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "nm-connection-editor" "kcmshell6 kcm_networkmanagement"`
                 property string taskManager: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "gnome-system-monitor" "plasma-systemmonitor --page-name Processes" "command -v btop && kitty -1 fish -c btop"`
                 property string terminal: "kitty -1" // This is only for shell actions
                 property string update: "kitty --hold sh -c 'sudo pacman -Syu'"
