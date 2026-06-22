@@ -337,10 +337,6 @@ hl.bind("SUPER + SHIFT + L",
     { locked = true, description = "Session: Sleep" }) -- Sleep
 -- hl.bind("switch:on:Lid Switch", hl.dsp.exec_cmd("systemctl suspend || loginctl suspend"), {locked = true} ) -- # [hidden] Suspend when laptop lid is closed, uncomment if for whatever reason it's not the default behavior
 
-hl.bind("CTRL + SHIFT + ALT + SUPER + Delete", hl.dsp.exec_cmd("systemctl poweroff || loginctl poweroff"),
-    { description = "Session: Shut down" }) -- # [hidden] Power off
-
-
 --##! Apps
 hl.bind("SUPER + Return", hl.dsp.exec_cmd(terminal), { description = "App: Terminal" })
 hl.bind("SUPER + T", hl.dsp.exec_cmd(terminal))
