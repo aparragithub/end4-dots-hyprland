@@ -175,6 +175,20 @@ gets workspace 2 as its default. When the laptop is used alone, workspace 1
 falls back to `eDP-1`. The other PC should keep this file absent so it continues
 to use Hyprland's generic single-monitor behavior.
 
+### Auto-reload on monitor hotplug
+
+`workspaces.lua` reads `has_external_monitor` only while Hyprland parses its
+config (startup or `hyprctl reload`). A monitor plugged in **after** startup
+repositions via the static `monitor=` rules but does not re-run the Lua, so
+workspace 1 stays on the laptop panel until the next reload.
+
+`custom/scripts/monitor-hotplug-reload.sh` (tracked, launched once from
+`custom/execs.lua`) listens to Hyprland's `socket2` and runs `hyprctl reload`
+on `monitoradded`/`monitorremoved`, so the external monitor reclaims workspace 1
+automatically. It needs `socat` (declared in the
+`illogical-impulse-hyprland` meta package). On single-monitor hosts the reload
+is a harmless no-op, so the script is safe everywhere.
+
 ---
 
 ## 3. Intel iGPU monitoring (Intel machines only)

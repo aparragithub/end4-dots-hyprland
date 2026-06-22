@@ -1,7 +1,7 @@
 groups=(illogical-impulse)
 pkgname=illogical-impulse-hyprland
 pkgver=1.0
-pkgrel=5
+pkgrel=6
 pkgdesc='Illogical Impulse Hyprland relatated packages'
 arch=(any)
 license=(None)
@@ -9,4 +9,9 @@ depends=(
   hyprland
   hyprsunset
   wl-clipboard
+  # Required by custom/scripts/monitor-hotplug-reload.sh: socat reads Hyprland's
+  # socket2 event stream to detect monitoradded/monitorremoved and trigger a
+  # `hyprctl reload`, so workspaces.lua re-binds workspace 1 to an external
+  # monitor connected after startup.
+  socat
 )
