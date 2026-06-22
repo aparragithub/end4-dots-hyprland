@@ -60,7 +60,48 @@ Singleton {
     // Tries models.dev first, then falls back to OpenRouter.
     function price(providerId, modelId) {
         const mdResult = _priceModelsDev(providerId, modelId);
-        return _tryOpenRouterFallback(providerId, modelId, mdResult);
+        return _tryOpenRouterFallback(providerId, modelId, mdResult, _modelsDevModelName(providerId, modelId));
+    }
+
+    // Best-effort canonical model name from models.dev. This lets the
+    // OpenRouter fallback match by human-facing model name instead of relying
+    // on provider-specific short IDs such as OpenCode's "k2p7".
+    function _modelsDevModelName(providerId, modelId) {
+        if (!root.data) return "";
+        const providers = root.data.providers ?? root.data;
+        if (!providers) return "";
+
+        function providerMatches(providerKey) {
+            if (!providerId) return false;
+            return providerKey === providerId
+                || providerKey === `${providerId}-go`
+                || providerId === `${providerKey}-go`;
+        }
+
+        function entryName(entry) {
+            return String(entry?.name ?? "").trim();
+        }
+
+        const stripped = String(modelId).includes("/")
+            ? String(modelId).slice(String(modelId).indexOf("/") + 1)
+            : String(modelId);
+
+        for (const pid of Object.keys(providers)) {
+            if (!providerMatches(pid)) continue;
+            const models = providers[pid]?.models;
+            if (!models) continue;
+            if (entryName(models[modelId])) return entryName(models[modelId]);
+            if (entryName(models[stripped])) return entryName(models[stripped]);
+        }
+
+        for (const pid of Object.keys(providers)) {
+            const models = providers[pid]?.models;
+            if (!models) continue;
+            if (entryName(models[modelId])) return entryName(models[modelId]);
+            if (entryName(models[stripped])) return entryName(models[stripped]);
+        }
+
+        return "";
     }
 
     function _priceModelsDev(providerId, modelId) {
@@ -269,14 +310,11 @@ Singleton {
             if (globalState.cost && !globalState.ambiguous) return globalState.cost;
         }
 
-        // OpenRouter fallback: try when models.dev returned null or zero-cost
-        // without a "free"/"gratis" marker (likely missing pricing data)
-        const mdResult = null; // fell through all lookups above
-        return _tryOpenRouterFallback(providerId, modelId, mdResult);
+        return null;
     }
 
-    function _tryOpenRouterFallback(providerId, modelId, mdResult) {
-        const orCost = root._openRouterCost(modelId, providerId);
+    function _tryOpenRouterFallback(providerId, modelId, mdResult, modelsDevName) {
+        const orCost = root._openRouterCost(modelId, providerId, modelsDevName);
         if (!orCost) return mdResult;
         // OpenRouter cost found — prefer it over null or $0 models.dev data
         if (!mdResult) return orCost;
@@ -287,7 +325,7 @@ Singleton {
     // ── OpenRouter fallback lookup ────────────────────────────────────────────
     // OpenRouter pricing is per token; we multiply by 1e6 to match models.dev's
     // per-1M-tokens convention.
-    function _openRouterCost(modelId, providerId) {
+    function _openRouterCost(modelId, providerId, modelsDevName) {
         if (!root._openrouterModels || Object.keys(root._openrouterModels).length === 0)
             return null;
 
@@ -295,25 +333,21 @@ Singleton {
         const direct = root._openrouterModels[modelId];
         if (direct) return direct;
 
-        // 2. Search by normalized substring — match the model part after provider/
+        // 2. Search by normalized substring — prefer the canonical name from
+        // models.dev when available, then fall back to provider/model IDs.
         const normQuery = root._normalize(String(modelId));
-        if (normQuery.length < 4) return null;
+        const normName = root._normalize(String(modelsDevName ?? ""));
+        if (normQuery.length < 4 && normName.length < 4) return null;
 
-        // Build candidate search forms, including expanded abbreviations
-        // (e.g. k2p7 → k2.7, deepseek-v4 → deepseekv4)
+        // Build candidate search forms from the canonical name first, then the
+        // raw IDs stored by the caller.
         const candidates = [];
         const rawId = String(modelId);
         const stripped = rawId.replace(/^.*\//, "");
+        if (String(modelsDevName ?? "").trim().length > 0) candidates.push(String(modelsDevName));
         candidates.push(rawId, stripped);
 
-        // Expand k[N]p[M] pattern → k[N].[M] (OpenCode abbreviates Kimi versions)
-        const kpMatch = stripped.match(/^k(\d+)p(\d+)(.*)$/i);
-        if (kpMatch) {
-            candidates.push("k" + kpMatch[1] + "." + kpMatch[2] + (kpMatch[3] || ""));
-            candidates.push("kimi-k" + kpMatch[1] + "." + kpMatch[2] + (kpMatch[3] || ""));
-        }
-
-        // Generate forms with common provider prefixes
+        // Generate forms with provider prefixes as a low-priority hint.
         const providerNorm = root._normalize(String(providerId ?? ""));
         for (const c of [...candidates]) {
             if (providerNorm.length > 0) {
