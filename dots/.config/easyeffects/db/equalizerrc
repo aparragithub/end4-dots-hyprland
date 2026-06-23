@@ -1,0 +1,13 @@
+[sie][Equalizer#0#left]
+band0Frequency=80
+band0Slope=1
+band0Type=2
+band24Gain=3
+band24Q=2
+
+[sie][Equalizer#0#right]
+band0Frequency=80
+band0Slope=1
+band0Type=2
+band24Gain=3
+band24Q=2
