@@ -270,6 +270,7 @@ Singleton {
                     property int showNumberDelay: 300 // milliseconds
                     property list<string> numberMap: ["1", "2"] // Characters to show instead of numbers on workspace indicator
                     property bool useNerdFont: false
+                    property bool dynamic: false // Only show workspaces that have open windows
                 }
                 property JsonObject weather: JsonObject {
                     property bool enable: false

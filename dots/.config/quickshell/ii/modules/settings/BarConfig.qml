@@ -282,6 +282,36 @@ ContentPage {
         }
 
         ConfigSwitch {
+            buttonIcon: "apps"
+            text: Translation.tr('Show all app icons per workspace')
+            checked: Config.options.bar.workspaces.showAllAppIcons
+            onCheckedChanged: {
+                Config.options.bar.workspaces.showAllAppIcons = checked;
+            }
+        }
+
+        ConfigSpinBox {
+            icon: "filter_frames"
+            text: Translation.tr("Max workspace app icons")
+            value: Config.options.bar.workspaces.maxAppIcons
+            from: 1
+            to: 20
+            stepSize: 1
+            onValueChanged: {
+                Config.options.bar.workspaces.maxAppIcons = value;
+            }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "dynamic_form"
+            text: Translation.tr('Dynamic workspaces')
+            checked: Config.options.bar.workspaces.dynamic
+            onCheckedChanged: {
+                Config.options.bar.workspaces.dynamic = checked;
+            }
+        }
+
+        ConfigSwitch {
             buttonIcon: "colors"
             text: Translation.tr('Tint app icons')
             checked: Config.options.bar.workspaces.monochromeIcons

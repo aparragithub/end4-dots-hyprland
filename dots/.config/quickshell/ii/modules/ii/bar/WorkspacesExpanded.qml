@@ -17,6 +17,21 @@ Item {
     readonly property int workspacesShown: Config.options.bar.workspaces.shown
     readonly property int workspaceGroup: Math.floor((effectiveActiveWorkspaceId - 1) / workspacesShown)
     readonly property int maxAppIcons: Config.options.bar.workspaces.maxAppIcons
+    readonly property bool dynamic: Config.options?.bar.workspaces.dynamic ?? false
+    readonly property var sortedWorkspaceIds: {
+        const ids = HyprlandData.workspaceIds.filter(id => id >= 1 && id <= 100);
+        ids.sort((a, b) => a - b);
+        if (ids.indexOf(root.effectiveActiveWorkspaceId) === -1) {
+            ids.push(root.effectiveActiveWorkspaceId);
+            ids.sort((a, b) => a - b);
+        }
+        return ids;
+    }
+    readonly property int effectiveCount: root.dynamic ? root.sortedWorkspaceIds.length : root.workspacesShown
+    function wsValueForIndex(idx) {
+        if (root.dynamic) return root.sortedWorkspaceIds[idx];
+        return root.workspaceGroup * root.workspacesShown + idx + 1;
+    }
 
     property int pillHeight: 24
     property int iconSize: 16
@@ -37,12 +52,12 @@ Item {
         spacing: 4
 
         Repeater {
-            model: root.workspacesShown
+            model: root.effectiveCount
 
             Rectangle {
                 id: pill
                 required property int index
-                readonly property int workspaceValue: root.workspaceGroup * root.workspacesShown + index + 1
+                readonly property int workspaceValue: root.wsValueForIndex(index)
                 readonly property bool isActive: root.effectiveActiveWorkspaceId === workspaceValue
                 readonly property var entries: (root.dataTick, HyprlandData.appEntriesForWorkspace(workspaceValue, root.maxAppIcons))
                 readonly property bool occupied: (root.dataTick, HyprlandData.hyprlandClientsForWorkspace(workspaceValue).length > 0)

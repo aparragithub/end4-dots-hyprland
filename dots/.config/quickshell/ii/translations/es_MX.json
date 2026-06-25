@@ -764,5 +764,8 @@
   "now": "ahora",
   "Estimated cost (API rate)": "Costo estimado (tarifa API)",
   "Estimated API-rate cost": "Costo estimado (tarifa API)",
-  "Usage unavailable": "Uso no disponible"
+  "Usage unavailable": "Uso no disponible",
+  "Show all app icons per workspace": "Mostrar todos los iconos por workspace",
+  "Max workspace app icons": "Máximo de iconos por workspace",
+  "Dynamic workspaces": "Workspaces dinámicos"
 }
