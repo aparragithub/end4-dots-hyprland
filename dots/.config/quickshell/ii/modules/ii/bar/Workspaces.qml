@@ -37,7 +37,11 @@ Item {
 
     readonly property bool dynamic: Config.options?.bar.workspaces.dynamic ?? false
     readonly property var sortedWorkspaceIds: {
-        const ids = HyprlandData.workspaceIds.filter(id => id >= 1 && id <= 100);
+        const monitorId = root.monitor?.id;
+        const ids = HyprlandData.workspaces
+            .filter(ws => ws.monitorID === monitorId)
+            .map(ws => ws.id)
+            .filter(id => id >= 1 && id <= 100);
         ids.sort((a, b) => a - b);
         if (ids.indexOf(root.effectiveActiveWorkspaceId) === -1) {
             ids.push(root.effectiveActiveWorkspaceId);
