@@ -107,7 +107,7 @@ function deletion_prompt(){
 deletion_prompt "${INSTALLED_LISTFILE}"
 
 empty_dir_listfile=$(mktemp)
-scan_paths=(${XDG_CONFIG_HOME} "${XDG_DATA_HOME}"/konsole)
+scan_paths=(${XDG_CONFIG_HOME})
 for dir in "${scan_paths[@]}"; do
   find "$dir" -type d -empty -print >> $empty_dir_listfile
 done

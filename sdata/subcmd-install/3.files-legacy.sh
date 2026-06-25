@@ -15,7 +15,6 @@ case "${SKIP_MISCCONF}" in
       elif [ -f "dots/.config/$i" ];then install_file "dots/.config/$i" "$XDG_CONFIG_HOME/$i"
       fi
     done
-    install_dir "dots/.local/share/konsole" "${XDG_DATA_HOME}"/konsole
     install_dir__ignore_existing "dots/.config/gtk-3.0" "$XDG_CONFIG_HOME/gtk-3.0"
     install_dir__ignore_existing "dots/.config/gtk-4.0" "$XDG_CONFIG_HOME/gtk-4.0"
     ;;
