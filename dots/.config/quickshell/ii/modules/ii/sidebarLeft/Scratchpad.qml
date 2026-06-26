@@ -1,5 +1,6 @@
 import qs.services
 import qs.modules.common
+import qs.modules.common.functions
 import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Controls
@@ -10,19 +11,76 @@ import Quickshell.Io
 Item {
     id: root
     property real padding: 4
-    property string filePath: `${Directories.state}/scratchpad.txt`
+
+    // One file per day: ~/.local/state/quickshell/scratchpad/YYYY-MM-DD.txt
+    // Directories.state carries a "file://" prefix, so it must be trimmed
+    // before being handed to shell commands.
+    property string baseDir: FileUtils.trimFileProtocol(`${Directories.state}/scratchpad`)
+    property string today: dateStamp()
+    property string filePath: `${root.baseDir}/${root.today}.txt`
     property string lastSavedText: ""
+
+    function dateStamp() {
+        const d = new Date()
+        const y = d.getFullYear()
+        const m = String(d.getMonth() + 1).padStart(2, "0")
+        const day = String(d.getDate()).padStart(2, "0")
+        return `${y}-${m}-${day}`
+    }
 
     function focusActiveItem() {
         textArea.forceActiveFocus()
     }
 
     onFocusChanged: focus => {
-        if (focus) textArea.forceActiveFocus()
+        if (focus) {
+            root.checkRollover()
+            textArea.forceActiveFocus()
+        }
     }
 
     Component.onCompleted: {
+        root.loadToday()
+    }
+
+    // Reload today's file into the editor (clears it if the file is absent).
+    function loadToday() {
+        loadProc.running = false
         loadProc.running = true
+    }
+
+    // Persist text to a specific day's file. Empty text means "no note today":
+    // the file is removed instead of left as an empty backup.
+    function persist(targetPath, text) {
+        if (text.length === 0) {
+            Quickshell.execDetached(["rm", "-f", targetPath])
+            return
+        }
+        saveProc.targetPath = targetPath
+        saveProc.pendingText = text
+        saveProc.running = false
+        saveProc.running = true
+    }
+
+    // Detect a day change while the shell is running: flush the current text to
+    // the previous day's file, then start the new day blank.
+    function checkRollover() {
+        const stamp = root.dateStamp()
+        if (stamp === root.today)
+            return
+        saveTimer.stop()
+        root.persist(root.filePath, textArea.text) // filePath still points at the old day
+        root.lastSavedText = textArea.text
+        root.today = stamp                          // filePath now points at the new day
+        root.loadToday()
+    }
+
+    Timer {
+        id: rolloverTimer
+        interval: 60000
+        repeat: true
+        running: true
+        onTriggered: root.checkRollover()
     }
 
     Process {
@@ -45,19 +103,19 @@ Item {
             const currentText = textArea.text
             if (currentText !== root.lastSavedText) {
                 root.lastSavedText = currentText
-                saveProc.running = false
-                saveProc.stdinEnabled = true
-                saveProc.running = true
+                root.persist(root.filePath, currentText)
             }
         }
     }
 
     Process {
         id: saveProc
-        command: ["bash", "-c", `cat > '${root.filePath}'`]
+        property string targetPath: ""
+        property string pendingText: ""
+        command: ["bash", "-c", `mkdir -p "$(dirname '${saveProc.targetPath}')" && cat > '${saveProc.targetPath}'`]
         onRunningChanged: {
             if (saveProc.running) {
-                saveProc.write(root.lastSavedText)
+                saveProc.write(saveProc.pendingText)
                 saveProc.stdinEnabled = false
             }
         }
@@ -77,11 +135,28 @@ Item {
 
             StyledText {
                 font.pixelSize: Appearance.font.pixelSize.small
-                text: Translation.tr("Notes")
+                text: Translation.tr("Notes") + ` · ${root.today}`
                 color: Appearance.colors.colSubtext
             }
 
             Item { Layout.fillWidth: true }
+
+            RippleButton {
+                id: folderButton
+                implicitWidth: 32
+                implicitHeight: 32
+                buttonRadius: Appearance.rounding.small
+
+                contentItem: MaterialSymbol {
+                    anchors.centerIn: parent
+                    iconSize: Appearance.font.pixelSize.larger
+                    text: "folder_open"
+                    color: Appearance.colors.colOnLayer1
+                }
+                onClicked: {
+                    Quickshell.execDetached(["bash", "-c", `mkdir -p '${root.baseDir}' && xdg-open '${root.baseDir}'`])
+                }
+            }
 
             RippleButton {
                 id: keepButton
@@ -139,7 +214,12 @@ Item {
 
                 StyledTextArea {
                     id: textArea
-                    anchors.fill: parent
+                    // A TextArea inside a ScrollView must NOT use anchors.fill:
+                    // the ScrollView measures its implicit content height to scroll.
+                    // Drive width from the viewport and let height grow with content,
+                    // filling the viewport when content is short.
+                    width: scrollView.availableWidth
+                    height: Math.max(implicitHeight, scrollView.availableHeight)
                     wrapMode: TextArea.Wrap
                     padding: 8
                     placeholderText: Translation.tr("escribe aqui...")
