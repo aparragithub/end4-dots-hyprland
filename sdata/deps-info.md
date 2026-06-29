@@ -159,8 +159,24 @@ Tips:
   - Used as the preferred file manager.
 - `nordvpn-bin`
   - Provides NordVPN daemon and CLI.
-- `onlyoffice-bin`
+- `libreoffice-fresh`
   - Used as the preferred office suite.
+- `ttf-liberation`
+  - Metric-compatible fonts for Arial/Times/Courier (MS Office fidelity).
+- `ttf-carlito`
+  - Metric-compatible substitute for Calibri (MS Office fidelity).
+- `ttf-caladea`
+  - Metric-compatible substitute for Cambria (MS Office fidelity).
+- `hunspell-es_ar`
+  - Spanish (Argentina) spell-checking dictionary.
+- `hunspell-en_us`
+  - English (US) spell-checking dictionary.
+- `hyphen-es`
+  - Spanish hyphenation rules.
+- `mythes-es`
+  - Spanish thesaurus.
+- `libreoffice-extension-languagetool`
+  - Grammar and style checker for LibreOffice.
 - `openai-codex`
   - Provides the Codex CLI coding agent.
 - `openai-codex-desktop`

@@ -1,7 +1,7 @@
 groups=(illogical-impulse)
 pkgname=illogical-impulse-kde
 pkgver=1.0
-pkgrel=15
+pkgrel=16
 pkgdesc='Illogical Impulse KDE Dependencies'
 arch=(any)
 license=(None)
@@ -19,7 +19,15 @@ depends=(
   nemo-terminal
   cinnamon-translations
   nordvpn-bin
-  onlyoffice-bin
+  libreoffice-fresh
+  ttf-liberation
+  ttf-carlito
+  ttf-caladea
+  hunspell-es_ar
+  hunspell-en_us
+  hyphen-es
+  mythes-es
+  libreoffice-extension-languagetool
   openai-codex
   openai-codex-desktop
   opencode
