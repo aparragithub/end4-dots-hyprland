@@ -51,11 +51,13 @@ Singleton {
     property int spentTodayTokens: 0
     property int spentWeekTokens: 0
     property int spentMonthTokens: 0
+    property int spentLastMonthTokens: 0
 
     // Estimated API-rate cost (USD). Clearly labeled in widget — not a bill.
     property real spentTodayCost: 0
     property real spentWeekCost: 0
     property real spentMonthCost: 0
+    property real spentLastMonthCost: 0
 
     // Token split totals for today (input net, output, cache read)
     property int spentTodayInputTokens: 0
@@ -218,9 +220,13 @@ Singleton {
         const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
         const curYear    = now.getFullYear();
         const curMonth   = now.getMonth();
+        const lastMonthDate  = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthYear  = lastMonthDate.getFullYear();
+        const lastMonthMonth = lastMonthDate.getMonth();
 
         let weekTokens = 0, weekCost = 0;
         let monthTokens = 0, monthCost = 0;
+        let lastMonthTokens = 0, lastMonthCost = 0;
 
         for (const row of rows) {
             const d = new Date(`${row.date}T00:00:00`);
@@ -250,12 +256,18 @@ Singleton {
                 monthTokens += totalTok;
                 monthCost   += rowCost;
             }
+            if (d.getFullYear() === lastMonthYear && d.getMonth() === lastMonthMonth) {
+                lastMonthTokens += totalTok;
+                lastMonthCost   += rowCost;
+            }
         }
 
         root.spentWeekTokens = weekTokens;
         root.spentWeekCost   = weekCost;
         root.spentMonthTokens = monthTokens;
         root.spentMonthCost   = monthCost;
+        root.spentLastMonthTokens = lastMonthTokens;
+        root.spentLastMonthCost   = lastMonthCost;
     }
 
     Process {

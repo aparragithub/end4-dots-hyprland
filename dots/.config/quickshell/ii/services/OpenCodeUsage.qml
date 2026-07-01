@@ -45,19 +45,23 @@ Singleton {
     property var todayRows: []
     property var weekRows: []
     property var monthRows: []
+    property var lastMonthRows: []
 
     // Period totals (sum across all providers)
     property real spentTodayCost: 0
     property real spentWeekCost: 0
     property real spentMonthCost: 0
+    property real spentLastMonthCost: 0
     property int spentTodayTokens: 0
     property int spentWeekTokens: 0
     property int spentMonthTokens: 0
+    property int spentLastMonthTokens: 0
 
     // models.dev estimated totals (rows where estimatedCost != null)
     property real spentTodayCostEstimated: 0
     property real spentWeekCostEstimated: 0
     property real spentMonthCostEstimated: 0
+    property real spentLastMonthCostEstimated: 0
 
     // ── Loading flag ─────────────────────────────────────────────────────────
     property bool usageLoading: Config.options.sidebar.aiUsage.providers.opencode.enable
@@ -81,6 +85,7 @@ Singleton {
         const todayArr = data.today ?? [];
         const weekArr  = data.week  ?? [];
         const monthArr = data.month ?? [];
+        const lastMonthArr = data.lastMonth ?? [];
 
         // Annotate each row with estimatedCost via ModelPricing
         function annotate(arr) {
@@ -101,10 +106,12 @@ Singleton {
         annotate(todayArr);
         annotate(weekArr);
         annotate(monthArr);
+        annotate(lastMonthArr);
 
         root.todayRows = todayArr;
         root.weekRows  = weekArr;
         root.monthRows = monthArr;
+        root.lastMonthRows = lastMonthArr;
 
         let tc = 0, tt = 0, tcEst = 0;
         for (const r of todayArr) {
@@ -135,6 +142,16 @@ Singleton {
         root.spentMonthCost          = mc;
         root.spentMonthTokens        = mt;
         root.spentMonthCostEstimated = mcEst;
+
+        let lmc = 0, lmt = 0, lmcEst = 0;
+        for (const r of lastMonthArr) {
+            lmc    += r.estimatedCost ?? 0;
+            lmt    += r.tokens ?? 0;
+            if (r.estimatedCost !== null && r.estimatedCost !== undefined) lmcEst += r.estimatedCost;
+        }
+        root.spentLastMonthCost          = lmc;
+        root.spentLastMonthTokens        = lmt;
+        root.spentLastMonthCostEstimated = lmcEst;
 
         root.available    = true;
         root.error        = "";

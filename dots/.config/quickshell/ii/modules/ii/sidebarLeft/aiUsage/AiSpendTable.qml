@@ -14,11 +14,16 @@ ColumnLayout {
     property double todayCost: -1
     property double weekCost: -1
     property double monthCost: -1
-    
+    property double lastMonthCost: -1
+
     property string todayTokensText: ""
     property string weekTokensText: ""
     property string monthTokensText: ""
-    
+    property string lastMonthTokensText: ""
+
+    property string monthLabel: Translation.tr("This month")
+    property string lastMonthLabel: Translation.tr("Last month")
+
     Layout.fillWidth: true
     spacing: 6
     
@@ -96,7 +101,7 @@ ColumnLayout {
                 visible: rootTable.monthCost >= 0
                 font.pixelSize: Appearance.font.pixelSize.small
                 color: Appearance.colors.colSubtext
-                text: Translation.tr("This month")
+                text: rootTable.monthLabel
             }
             StyledText {
                 visible: rootTable.monthCost >= 0
@@ -112,6 +117,29 @@ ColumnLayout {
                 font.pixelSize: Appearance.font.pixelSize.small
                 color: Appearance.colors.colSubtext
                 text: rootTable.monthTokensText
+            }
+
+            // --- Last Month Row ---
+            StyledText {
+                visible: rootTable.lastMonthCost >= 0
+                font.pixelSize: Appearance.font.pixelSize.small
+                color: Appearance.colors.colSubtext
+                text: rootTable.lastMonthLabel
+            }
+            StyledText {
+                visible: rootTable.lastMonthCost >= 0
+                Layout.alignment: Qt.AlignRight
+                font.pixelSize: Appearance.font.pixelSize.small
+                font.weight: Font.Medium
+                color: Appearance.colors.colOnLayer1
+                text: rootTable.formatCost(rootTable.lastMonthCost)
+            }
+            StyledText {
+                visible: rootTable.lastMonthCost >= 0
+                Layout.alignment: Qt.AlignRight
+                font.pixelSize: Appearance.font.pixelSize.small
+                color: Appearance.colors.colSubtext
+                text: rootTable.lastMonthTokensText
             }
         }
 

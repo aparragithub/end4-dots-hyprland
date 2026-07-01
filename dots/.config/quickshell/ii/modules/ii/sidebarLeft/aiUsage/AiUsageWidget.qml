@@ -33,6 +33,9 @@ Item {
         || Config.options.sidebar.aiUsage.providers.antigravity.enable
         || Config.options.sidebar.aiUsage.providers.opencode.enable
 
+    readonly property string currentMonthName: Qt.locale().toString(new Date(), "MMMM")
+    readonly property string lastMonthName: Qt.locale().toString(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1), "MMMM")
+
     // Fan-out tabVisible to all four provider services. Each service self-gates
     // on its own enable flag, so setting tabVisible on a disabled service is safe.
     onActiveChanged: {
@@ -228,6 +231,12 @@ Item {
                             monthTokensText: root.formatTokens(AiUsage.spentMonthInputTokens) + " in · "
                                 + root.formatTokens(AiUsage.spentMonthOutputTokens) + " out · "
                                 + root.formatTokens(AiUsage.spentMonthCacheTokens) + " cache"
+                            monthLabel: root.currentMonthName
+                            lastMonthLabel: root.lastMonthName
+                            lastMonthCost: AiUsage.spentLastMonthCost
+                            lastMonthTokensText: root.formatTokens(AiUsage.spentLastMonthInputTokens) + " in · "
+                                + root.formatTokens(AiUsage.spentLastMonthOutputTokens) + " out · "
+                                + root.formatTokens(AiUsage.spentLastMonthCacheTokens) + " cache"
                         }
                     }
                 }
@@ -283,8 +292,20 @@ Item {
                     }
                     
                     AiOpenCodePeriodBlock {
-                        title: Translation.tr("This month")
+                        title: root.currentMonthName
                         rows: OpenCodeUsage.monthRows
+                    }
+
+                    Rectangle {
+                        visible: OpenCodeUsage.monthRows.length > 0 && OpenCodeUsage.lastMonthRows.length > 0
+                        Layout.fillWidth: true
+                        height: 1
+                        color: Appearance.colors.colLayer3
+                    }
+
+                    AiOpenCodePeriodBlock {
+                        title: root.lastMonthName
+                        rows: OpenCodeUsage.lastMonthRows
                     }
                 }
             }
@@ -351,6 +372,10 @@ Item {
                         weekTokensText: root.formatTokens(OpenAiUsage.spentWeekTokens) + " " + Translation.tr("tokens")
                         monthCost: OpenAiUsage.spentMonthCost
                         monthTokensText: root.formatTokens(OpenAiUsage.spentMonthTokens) + " " + Translation.tr("tokens")
+                        monthLabel: root.currentMonthName
+                        lastMonthLabel: root.lastMonthName
+                        lastMonthCost: OpenAiUsage.spentLastMonthCost
+                        lastMonthTokensText: root.formatTokens(OpenAiUsage.spentLastMonthTokens) + " " + Translation.tr("tokens")
                     }
                 }
             }

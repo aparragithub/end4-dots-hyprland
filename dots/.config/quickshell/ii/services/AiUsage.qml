@@ -78,6 +78,12 @@ Singleton {
     property int spentMonthOutputTokens: 0
     property int spentMonthCacheTokens: 0
 
+    property real spentLastMonthCost: 0
+    property real spentLastMonthCostEstimated: 0
+    property int spentLastMonthInputTokens: 0
+    property int spentLastMonthOutputTokens: 0
+    property int spentLastMonthCacheTokens: 0
+
     // ── Loading flags ────────────────────────────────────────────────────────
     // Start true while the provider is enabled so the UI shows "Loading…" until
     // the first fetch resolves, instead of flashing the "unavailable" notice for
@@ -205,11 +211,16 @@ Singleton {
         const weekStart  = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
         const curYear    = now.getFullYear();
         const curMonth   = now.getMonth();
+        const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1); // JS Date normalizes negative month/year rollover
+        const lastMonthYear = lastMonthDate.getFullYear();
+        const lastMonthMonth = lastMonthDate.getMonth();
 
         let todayTokens = 0, weekEstCost = 0, monthEstCost = 0, todayEstCost = 0;
         let todayInputTokens = 0, todayOutputTokens = 0, todayCacheTokens = 0;
         let weekInputTokens = 0, weekOutputTokens = 0, weekCacheTokens = 0;
         let monthInputTokens = 0, monthOutputTokens = 0, monthCacheTokens = 0;
+        let lastMonthEstCost = 0;
+        let lastMonthInputTokens = 0, lastMonthOutputTokens = 0, lastMonthCacheTokens = 0;
 
         for (const row of rows) {
             const p = row.period ?? row.date;
@@ -269,6 +280,12 @@ Singleton {
                 monthOutputTokens += rowOutputTok;
                 monthCacheTokens  += rowCacheTok;
             }
+            if (d.getFullYear() === lastMonthYear && d.getMonth() === lastMonthMonth) {
+                lastMonthEstCost      += rowEstCost;
+                lastMonthInputTokens  += rowInputTok;
+                lastMonthOutputTokens += rowOutputTok;
+                lastMonthCacheTokens  += rowCacheTok;
+            }
         }
 
         root.spentTodayCost           = todayEstCost;
@@ -289,6 +306,12 @@ Singleton {
         root.spentMonthInputTokens    = monthInputTokens;
         root.spentMonthOutputTokens   = monthOutputTokens;
         root.spentMonthCacheTokens    = monthCacheTokens;
+
+        root.spentLastMonthCost          = lastMonthEstCost;
+        root.spentLastMonthCostEstimated = lastMonthEstCost;
+        root.spentLastMonthInputTokens   = lastMonthInputTokens;
+        root.spentLastMonthOutputTokens  = lastMonthOutputTokens;
+        root.spentLastMonthCacheTokens   = lastMonthCacheTokens;
 
         root.spentAvailable           = true;
         root.spentError               = "";
