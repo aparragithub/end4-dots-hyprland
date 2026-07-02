@@ -48,7 +48,7 @@ Singleton {
 
     Process {
         id: checkUpdatesProc
-        command: ["bash", "-c", "checkupdates | wc -l"]
+        command: ["bash", "-c", "(checkupdates; paru -Qua) | wc -l"]
         stdout: StdioCollector {
             onStreamFinished: {
                 root.count = parseInt(text.trim());
