@@ -152,13 +152,30 @@ also create `~/.config/hypr/workspaces.lua` **only on the laptop**:
 
 ```lua
 -- ~/.config/hypr/workspaces.lua
-local external_monitor = "HDMI-A-1"
+local external_desc = "Microstep MSI MP251L E2 PD2M215500788"
+local external_serial = "PD2M215500788"
 local laptop_panel = "eDP-1"
-local has_external_monitor = hl.get_monitor(external_monitor) ~= nil
+
+-- Detect via DRM sysfs EDID, NOT hyprctl: this file is re-evaluated on
+-- `hyprctl reload`, and calling hyprctl back during the parse deadlocks
+-- Hyprland's single-threaded IPC. The serial is port- and machine-independent.
+local function has_external_panel(serial)
+    local cmd = "for f in /sys/class/drm/card*/edid; do "
+        .. "[ \"$(cat \"${f%/edid}/status\" 2>/dev/null)\" = connected ] && "
+        .. "grep -aq '" .. serial .. "' \"$f\" 2>/dev/null && echo yes && break; "
+        .. "done"
+    local handle = io.popen(cmd)
+    if not handle then return false end
+    local out = handle:read("*a")
+    handle:close()
+    return out:find("yes", 1, true) ~= nil
+end
+
+local has_external_monitor = has_external_panel(external_serial)
 
 hl.workspace_rule({
     workspace = "1",
-    monitor = has_external_monitor and external_monitor or laptop_panel,
+    monitor = has_external_monitor and ("desc:" .. external_desc) or laptop_panel,
     default = true,
     persistent = true
 })
@@ -173,10 +190,18 @@ if has_external_monitor then
 end
 ```
 
-When `HDMI-A-1` is connected, workspace 1 is created there and the laptop panel
-gets workspace 2 as its default. When the laptop is used alone, workspace 1
-falls back to `eDP-1`. The other PC should keep this file absent so it continues
-to use Hyprland's generic single-monitor behavior.
+When the external monitor is connected, workspace 1 is created there and the
+laptop panel gets workspace 2 as its default. When the laptop is used alone,
+workspace 1 falls back to `eDP-1`. The other PC should keep this file absent so
+it continues to use Hyprland's generic single-monitor behavior.
+
+> **Match by hardware, not port name.** The original version detected the
+> external with `hl.get_monitor("HDMI-A-1")`, which silently failed: the same
+> panel enumerates as `HDMI-A-1` over a direct cable but `DP-N` through a USB
+> hub, so workspace 1 stayed on the laptop. Detect by EDID serial (sysfs) and
+> bind by `desc:` — the same hardware-identity approach `monitors.lua` uses.
+> Do **not** call `hyprctl` from inside this file: it runs during config parse
+> and the IPC round-trip deadlocks the reload.
 
 ### Auto-reload on monitor hotplug
 
