@@ -24,3 +24,8 @@ hl.bind("SUPER + H", hl.dsp.global("quickshell:sidebarRightToggle"), { descripti
 -- Workspace switcher: Alt+Tab
 hl.bind("ALT + Tab", hl.dsp.focus({ workspace = "m+1" }), { description = "Workspace: Focus next occupied" })
 hl.bind("ALT + SHIFT + Tab", hl.dsp.focus({ workspace = "m-1" }), { description = "Workspace: Focus previous occupied" })
+
+-- Voice dictation: whisper.cpp push-to-talk (types into the focused window)
+-- Replaces the stock dsnote shortcut (dsnote uninstalled).
+hl.unbind("SUPER + SHIFT + D")
+hl.bind("SUPER + SHIFT + D", hl.dsp.exec_cmd("~/.config/hypr/custom/scripts/dictation-toggle.sh"), { description = "Dictation: Toggle voice typing (whisper)" })

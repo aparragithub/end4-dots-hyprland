@@ -9,6 +9,9 @@ are intentionally not versioned:
   The repo only ships the *defaults* in
   `dots/.config/quickshell/ii/modules/common/Config.qml`; this file overrides them.
 - **System files under `/etc`** — e.g. pacman hooks. Machine-specific.
+- **Voice dictation** — the `whisper.cpp-vulkan` package and the ~1.6 GB
+  `ggml-large-v3-turbo` model are installed outside the repo. Setup and reinstall
+  steps: [`docs/voice-dictation.md`](docs/voice-dictation.md).
 
 This document records the manual steps so a fresh install (or the other machine)
 can be brought to the same state.
